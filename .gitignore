@@ -1,0 +1,9 @@
+# Roblox Studio lock files
+/*.rbxlx.lock
+/*.rbxl.lock
+
+# old references
+/old
+/asd
+
+*.code-workspace

@@ -1,0 +1,15 @@
+{
+	"name": "luau_term_testing",
+	"emitLegacyScripts": false,
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"test": {
+				"$path": "test",
+				"luau_term": {
+					"$path": "src"
+				}
+			}
+		}
+	}
+}
