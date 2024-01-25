@@ -4,8 +4,16 @@ local ControlCodes = {
 	-- ESC
 	[0x1B] = function(term: Terminal.Terminal)
 		term.escaping = true
+
+		-- Buffer switching, check Terminal type definition for explanation
+		local currentBuffer = term.escapingState
+		local previousBuffer = term.escapingState_previousBuffer
+		table.clear(previousBuffer)
+		term.escapingState = previousBuffer
+		term.escapingState_previousBuffer = currentBuffer
+		
+		term.escapeCodepoint_previous = term.escapeCodepoint
 		term.escapeCodepoint = nil
-		table.clear(term.escapingState)
 	end,
 
 	-- BS

@@ -4,9 +4,15 @@ export type Terminal = {
 	canvas: Renderer.TerminalCanvas,
 	cursor: Vector2,
 	escaping: boolean,
-	escapeCodepoint: number | nil,
-	escapingState: { number },
 	state: { [string]: any },
+
+	-- Double buffered escape state
+	-- Used for cases like String Terminator sequence, where a previous
+	-- escape sequence buffer is required
+	escapingState: { number },
+	escapingState_previousBuffer: { number },
+	escapeCodepoint: number | nil,
+	escapeCodepoint_previous: number | nil,
 
 	-- callback function to transmit terminal messages to the shell
 	stdin: ((term: Terminal, str: string) -> ())?,
@@ -60,6 +66,7 @@ local function createTerminal(width: number, height: number): Terminal
 		escaping = false,
 		escapeCodepoint = nil,
 		escapingState = {},
+		escapingState_previousBuffer = {},
 		state = {},
 	}
 	return terminal
