@@ -1,7 +1,7 @@
 -- trim12 taken from http://lua-users.org/wiki/StringTrim
 local function trim(s: string): string
 	local from = s:match("^%s*()")
-	return from > #s and "" or s:match(".*%S", from)
+	return from > #s and "" or s:match(".*%S", from) :: string
 end
 
 local function parseUnifont(data: string)

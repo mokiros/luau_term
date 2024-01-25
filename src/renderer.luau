@@ -3,13 +3,21 @@ local Colors = require(script.Parent.ansi.colors)
 type characterUnit = number
 type pixelUnit = number
 
+export type TerminalFont = { [number]: buffer }
+
+export type TerminalFonts = {
+	normal: TerminalFont,
+	bold: TerminalFont?,
+	italic: TerminalFont?,
+}
+
 export type TerminalCanvas = {
 	width: characterUnit,
 	canvasWidth: pixelUnit,
 	height: characterUnit,
 	canvasHeight: pixelUnit,
 	buffer: { number },
-	font: { [number]: buffer },
+	fonts: TerminalFonts,
 	bgColor: Color3,
 	fgColor: Color3,
 	attributes: { [string]: any },
@@ -18,11 +26,27 @@ export type TerminalCanvas = {
 local defaultFGindex = 8
 local defaultBGindex = 1
 
-local parseUnifont = require(script.Parent.unifont)
-local DefaultUnifont = parseUnifont(require(script.Parent["unifont.hex"]))
-
 local function drawCodepoint(canvas: TerminalCanvas, codepoint: number, x: characterUnit, y: characterUnit): ()
-	local glyphData = canvas.font[codepoint] or canvas.font[0xFFFD] or error(`Unknown codepoint: {codepoint}`)
+	local font = canvas.fonts.normal
+	local fallbackFont = font
+	if canvas.attributes["italic"] then
+		local italic = canvas.fonts.italic
+		if italic then
+			font = italic
+		end
+	end
+	if canvas.attributes["bold"] then
+		local bold = canvas.fonts.bold
+		if bold then
+			font = bold
+		end
+	end
+
+	local glyphData = font[codepoint]
+		or fallbackFont[codepoint]
+		or font[0xFFFD]
+		or fallbackFont[0xFFFD]
+		or error(`Unknown codepoint: {codepoint}`)
 	local len = buffer.len(glyphData)
 
 	-- Only support 8x16 or 16x16 characters
@@ -52,6 +76,25 @@ local function drawCodepoint(canvas: TerminalCanvas, codepoint: number, x: chara
 			canvasBuffer[pos + 1] = clr.R
 			canvasBuffer[pos + 2] = clr.G
 			canvasBuffer[pos + 3] = clr.B
+		end
+	end
+
+	if canvas.attributes["underline"] then
+		local lineOffset = 6 -- draw on 7th line
+		local start = (x0 + (y0 + lineOffset) * canvasWidth) * 4
+		for pos = start, start + 8 * 4, 4 do
+			canvasBuffer[pos + 1] = fg.R
+			canvasBuffer[pos + 2] = fg.G
+			canvasBuffer[pos + 3] = fg.B
+		end
+	end
+	if canvas.attributes["strikethrough"] then
+		local lineOffset = 3 -- draw on 4th line
+		local start = (x0 + (y0 + lineOffset) * canvasWidth) * 4
+		for pos = start, start + 8 * 4, 4 do
+			canvasBuffer[pos + 1] = fg.R
+			canvasBuffer[pos + 2] = fg.G
+			canvasBuffer[pos + 3] = fg.B
 		end
 	end
 end
@@ -155,7 +198,7 @@ local function shiftTerminalDown(canvas: TerminalCanvas, lines: number?): ()
 	clearLines(canvas, 0, _lines)
 end
 
-local function createCanvas(width: characterUnit, height: characterUnit): TerminalCanvas
+local function createCanvas(width: characterUnit, height: characterUnit, fonts: TerminalFonts): TerminalCanvas
 	-- Actual image size, since width and height represent the size in characters
 	local w: pixelUnit, h: pixelUnit = width * 8, height * 16
 
@@ -165,7 +208,7 @@ local function createCanvas(width: characterUnit, height: characterUnit): Termin
 		canvasWidth = w,
 		canvasHeight = h,
 		buffer = table.create(w * h * 4, 1),
-		font = DefaultUnifont,
+		fonts = fonts,
 		bgColor = Colors.Colors8[defaultBGindex],
 		fgColor = Colors.Colors8[defaultFGindex],
 		attributes = {},

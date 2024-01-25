@@ -1,7 +1,14 @@
 local Terminal = require(script.luau_term)
 local Renderer = require(script.luau_term.renderer)
 
-local term = Terminal.createTerminal(64, 40)
+local parseUnifont = require(script.unifont)
+
+local font = game:GetService("HttpService"):GetAsync(
+	"https://gist.githubusercontent.com/mokiros/b55a8a64ac100fe737450343f5ef3d85/raw/6835baa97d7cbb7431fb05faa6d41269c3c929b8/unifont-15.1.04.hex"
+)
+local parsedFont = parseUnifont(font)
+
+local term = Terminal.createTerminal(64, 40, { normal = parsedFont })
 local size = Vector2.new(term.canvas.canvasWidth, term.canvas.canvasHeight)
 
 local part = workspace:WaitForChild("terminal") :: Part

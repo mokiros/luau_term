@@ -56,8 +56,8 @@ local function writeCodepoint(term: Terminal, codepoint: number)
 	moveCursor(term, 1, 0)
 end
 
-local function createTerminal(width: number, height: number): Terminal
-	local canvas = Renderer.createCanvas(width, height)
+local function createTerminal(width: number, height: number, fonts: Renderer.TerminalFonts): Terminal
+	local canvas = Renderer.createCanvas(width, height, fonts)
 	local terminal: Terminal = {
 		canvas = canvas,
 		width = width,
