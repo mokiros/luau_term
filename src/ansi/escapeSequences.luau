@@ -179,6 +179,8 @@ local CSIHandlers: { [number]: (term: Terminal.Terminal, state: { number }) -> (
 			local mode = numbers[2]
 			if mode == 5 then -- 8 bit
 				-- TODO: 8 bit color lookup table or manually calculate it
+				local idx = numbers[3]
+				warn(`STUB: Encountered 8 bit color: {idx}`)
 			elseif mode == 2 then -- 24 bit
 				local r, g, b = numbers[3], numbers[4], numbers[5]
 				local clr = Color3.fromRGB(r or 0, g or 0, b or 0)
@@ -196,14 +198,32 @@ local CSIHandlers: { [number]: (term: Terminal.Terminal, state: { number }) -> (
 			warn(`Unknown SGR code: {num}`)
 		end
 	end,
+
+	-- CSI 6n - Device Status Report
+	[b("n")] = function(term, state)
+		local num = readNumber(state)
+		if num == 6 then
+			local cursor = term.cursor
+			Terminal.sendEscapeSequence(term, "R", { cursor.Y + 1, cursor.X + 1 })
+		else
+			warn(`Unknown DSR code: {num}`)
+		end
+	end,
 }
 
+CSIHandlers[b("f")] = CSIHandlers[b("H")]
+
 local SequenceHandlers: { [number]: (term: Terminal.Terminal, state: { number }) -> boolean? } = {
+
+	-- Control Sequence Introducer
 	[ESC("[")] = function(term, state)
 		local len = #state
 		if len == 0 then
 			return false
 		elseif len > 255 then
+			warn(`Escape sequence length exceeded 255, cancelling`)
+			term.escaping = false
+			return true
 		end
 		local codepoint = state[len]
 		if codepoint < 0x20 or codepoint > 0x7E then
@@ -223,6 +243,36 @@ local SequenceHandlers: { [number]: (term: Terminal.Terminal, state: { number })
 		end
 		return false
 	end,
+
+	-- Single Shift Two
+	[ESC("N")] = function(term, state)
+		warn(`Unsupported Single Shift Two sequence encountered`)
+		return true
+	end,
+
+	-- Single Shift Three
+	[ESC("O")] = function(term, state)
+		warn(`Unsupported Single Shift Three sequence encountered`)
+		return true
+	end,
+
+	-- Device Control String
+	[ESC("P")] = function(term, state)
+		-- Do nothing, the state will be processed in String Terminator sequence
+		return false
+	end,
+
+	-- String Terminator
+	[ESC("\\")] = function(term)
+		local codepoint = term.escapeCodepoint_previous
+		local state = term.escapingState_previousBuffer
+		warn(
+			`STUB: String Terminator encountered, previous code: {codepoint and string.char(codepoint) or nil}, previous state: {string.char(
+				table.unpack(state)
+			)}`
+		)
+		return true
+	end,
 }
 
 local function processEscapeCodepoint(term: Terminal.Terminal, codepoint: number): boolean
@@ -231,6 +281,11 @@ local function processEscapeCodepoint(term: Terminal.Terminal, codepoint: number
 		term.escapeCodepoint = codepoint
 	else
 		table.insert(state, codepoint)
+		if #state > 255 then
+			warn(`Escape sequence state exceeded limit, cancelling`)
+			term.escaping = false
+			return false
+		end
 	end
 	local handler = SequenceHandlers[term.escapeCodepoint :: number]
 	if not handler then
