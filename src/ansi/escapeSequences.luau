@@ -140,62 +140,82 @@ local CSIHandlers: { [number]: (term: Terminal.Terminal, state: { number }) -> (
 	-- where all the color magic happens
 	[b("m")] = function(term, state)
 		local numbers = readNumbersWithSemicolon(state)
-		local num = numbers[1]
-		if num == nil or num == 0 then -- reset
-			table.clear(term.canvas.attributes)
-			term.canvas.bgColor = Colors.Colors8[Renderer.defaultBGindex]
-			term.canvas.fgColor = Colors.Colors8[Renderer.defaultFGindex]
-		elseif num == 1 then -- bold
-			local idx = term.canvas.attributes["fg_colorIndex"] or Renderer.defaultFGindex
-			term.canvas.fgColor = Colors.Colors8[idx + 8]
-			term.canvas.attributes["bold"] = true
-		elseif num == 22 then -- normal intensity (not bold or faint)
-			local idx = term.canvas.attributes["fg_colorIndex"] or Renderer.defaultFGindex
-			term.canvas.fgColor = Colors.Colors8[idx]
-			term.canvas.attributes["bold"] = nil
-		elseif num >= 30 and num <= 37 then -- 3 bit foreground color
-			local idx = num % 10 + 1
-			term.canvas.attributes["fg_colorIndex"] = idx
-			if term.canvas.attributes["bold"] then
-				idx += 8 -- brighter color
-			end
-			term.canvas.fgColor = Colors.Colors8[idx]
-		elseif num == 39 then -- reset foreground color
-			term.canvas.attributes["fg_colorIndex"] = nil
-			local idx = Renderer.defaultFGindex
-			if term.canvas.attributes["bold"] then
-				idx += 8
-			end
-			term.canvas.fgColor = Colors.Colors8[idx]
-		elseif num >= 40 and num <= 47 then -- 3 bit background color
-			local idx = num % 10 + 1
-			term.canvas.attributes["bg_colorIndex"] = idx
-			term.canvas.bgColor = Colors.Colors8[idx]
-		elseif num == 49 then -- reset background color
-			term.canvas.attributes["bg_colorIndex"] = nil
-			local idx = Renderer.defaultBGindex
-			term.canvas.bgColor = Colors.Colors8[idx]
-		elseif num == 38 or num == 48 then -- 8/24 bit foreground colors
-			local mode = numbers[2]
-			if mode == 5 then -- 8 bit
-				-- TODO: 8 bit color lookup table or manually calculate it
-				local idx = numbers[3]
-				warn(`STUB: Encountered 8 bit color: {idx}`)
-			elseif mode == 2 then -- 24 bit
-				local r, g, b = numbers[3], numbers[4], numbers[5]
-				local clr = Color3.fromRGB(r or 0, g or 0, b or 0)
-				if num == 38 then -- foreground
-					term.canvas.attributes["fg_colorIndex"] = nil
-					term.canvas.fgColor = clr
-				else -- background
-					term.canvas.attributes["bg_colorIndex"] = nil
-					term.canvas.bgColor = clr
+		local len = #numbers
+		if len == 0 then
+			numbers[1] = 0
+			len = 1
+		end
+		local i = 0
+		while i < len do
+			i += 1
+			local num = numbers[i]
+			if num == nil or num == 0 then -- reset
+				table.clear(term.canvas.attributes)
+				term.canvas.bgColor = Colors.Colors8[Renderer.defaultBGindex]
+				term.canvas.fgColor = Colors.Colors8[Renderer.defaultFGindex]
+			elseif num == 1 then -- bold
+				local idx = term.canvas.attributes["fg_colorIndex"] or Renderer.defaultFGindex
+				term.canvas.fgColor = Colors.Colors8[idx + 8]
+				term.canvas.attributes["bold"] = true
+			elseif num == 22 then -- bold off
+				local idx = term.canvas.attributes["fg_colorIndex"] or Renderer.defaultFGindex
+				term.canvas.fgColor = Colors.Colors8[idx]
+				term.canvas.attributes["bold"] = nil
+			elseif num == 4 then -- underline
+				term.canvas.attributes["underline"] = true
+			elseif num == 24 then -- underline off
+				term.canvas.attributes["underline"] = nil
+			elseif num == 7 then -- inverted
+				term.canvas.attributes["inverted"] = true
+			elseif num == 27 then -- inverted off
+				term.canvas.attributes["inverted"] = nil
+			elseif num >= 30 and num <= 37 then -- 3 bit foreground color
+				local idx = num % 10 + 1
+				term.canvas.attributes["fg_colorIndex"] = idx
+				if term.canvas.attributes["bold"] then
+					idx += 8 -- brighter color
+				end
+				term.canvas.fgColor = Colors.Colors8[idx]
+			elseif num == 39 then -- reset foreground color
+				term.canvas.attributes["fg_colorIndex"] = nil
+				local idx = Renderer.defaultFGindex
+				if term.canvas.attributes["bold"] then
+					idx += 8
+				end
+				term.canvas.fgColor = Colors.Colors8[idx]
+			elseif num >= 40 and num <= 47 then -- 3 bit background color
+				local idx = num % 10 + 1
+				term.canvas.attributes["bg_colorIndex"] = idx
+				term.canvas.bgColor = Colors.Colors8[idx]
+			elseif num == 49 then -- reset background color
+				term.canvas.attributes["bg_colorIndex"] = nil
+				local idx = Renderer.defaultBGindex
+				term.canvas.bgColor = Colors.Colors8[idx]
+			elseif num == 38 or num == 48 then -- 8/24 bit foreground colors
+				i += 1
+				local mode = numbers[i]
+				if mode == 5 then -- 8 bit
+					-- TODO: 8 bit color lookup table or manually calculate it
+					i += 1
+					local idx = numbers[i]
+					warn(`STUB: Encountered 8 bit color: {idx}`)
+				elseif mode == 2 then -- 24 bit
+					local r, g, b = numbers[i + 1], numbers[i + 2], numbers[i + 3]
+					i += 3
+					local clr = Color3.fromRGB(r or 0, g or 0, b or 0)
+					if num == 38 then -- foreground
+						term.canvas.attributes["fg_colorIndex"] = nil
+						term.canvas.fgColor = clr
+					else -- background
+						term.canvas.attributes["bg_colorIndex"] = nil
+						term.canvas.bgColor = clr
+					end
+				else
+					warn(`Unsupported color mode: {mode}`)
 				end
 			else
-				warn(`Unsupported color mode: {mode}`)
+				warn(`Unknown SGR code: {num}`)
 			end
-		else
-			warn(`Unknown SGR code: {num}`)
 		end
 	end,
 
