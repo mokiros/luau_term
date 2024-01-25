@@ -3,12 +3,26 @@ local Renderer = require(script.Parent.renderer)
 export type Terminal = {
 	canvas: Renderer.TerminalCanvas,
 	cursor: Vector2,
-	stdin: ((str: string) -> ())?,
 	escaping: boolean,
 	escapeCodepoint: number | nil,
 	escapingState: { number },
 	state: { [string]: any },
+
+	-- callback function to transmit terminal messages to the shell
+	stdin: ((term: Terminal, str: string) -> ())?,
 }
+
+-- Used by the terminal to transmit escape sequences back to tty
+local function stdin(term: Terminal, str: string): ()
+	if term.stdin then
+		term.stdin(term, str)
+	end
+end
+
+-- Helper function to send "ESC [ <sequence> <finalByte>" to stdin
+local function sendEscapeSequence(term: Terminal, finalByte: string, sequence: { any }?): ()
+	stdin(term, "\27[" .. (sequence and table.concat(sequence, ";") or "") .. finalByte)
+end
 
 -- moves the cursor across the terminal
 -- if noWrap is true, cursor stays at the edges
@@ -55,4 +69,6 @@ return {
 	createTerminal = createTerminal,
 	writeCodepoint = writeCodepoint,
 	moveCursor = moveCursor,
+	stdin = stdin,
+	sendEscapeSequence = sendEscapeSequence,
 }
