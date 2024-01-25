@@ -7,3 +7,5 @@
 /asd
 
 *.code-workspace
+
+sourcemap.json
