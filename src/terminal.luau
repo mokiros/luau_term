@@ -45,7 +45,7 @@ local function moveCursor(term: Terminal, x: number, y: number, noWrap: boolean?
 	end
 
 	term.cursor = Vector2.new(
-		if noWrap then x1 % term.canvas.width else math.clamp(x1, 0, term.canvas.width - 1),
+		if noWrap ~= true then x1 % term.canvas.width else math.clamp(x1, 0, term.canvas.width - 1),
 		math.clamp(y1, 0, term.canvas.height - 1)
 	)
 end
