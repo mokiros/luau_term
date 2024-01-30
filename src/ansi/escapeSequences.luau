@@ -9,7 +9,7 @@ local b = string.byte
 -- Read a number from a sequence of codepoints
 local function readNumber(sequence: { number }): number?
 	local len = #sequence
-	if len > 4 then
+	if len > 15 then
 		warn(`Number sequence too long: length is {len}`)
 		return nil
 	end
@@ -35,7 +35,7 @@ local function readNumbersWithSemicolon(sequence: { number }): { number }
 	return numbers :: { number }
 end
 
-local CSIHandlers: { [number]: (term: Terminal.Terminal, state: { number }) -> () } = {
+local CSIHandlers: { [number]: (term: Terminal.Terminal, state: { number }, finalByte: number) -> () } = {
 	-- CSI n A - cursor up
 	[b("A")] = function(term, state)
 		local y = readNumber(state) or 1
@@ -171,27 +171,27 @@ local CSIHandlers: { [number]: (term: Terminal.Terminal, state: { number }) -> (
 				term.canvas.attributes["inverted"] = nil
 			elseif num >= 30 and num <= 37 then -- 3 bit foreground color
 				local idx = num % 10 + 1
-				term.canvas.attributes["fg_colorIndex"] = idx
-				if term.canvas.attributes["bold"] then
-					idx += 8 -- brighter color
-				end
+				term.canvas.attributes["fg_boldColor"] = Colors.Colors8[idx + 8]
 				term.canvas.fgColor = Colors.Colors8[idx]
 			elseif num == 39 then -- reset foreground color
-				term.canvas.attributes["fg_colorIndex"] = nil
 				local idx = Renderer.defaultFGindex
-				if term.canvas.attributes["bold"] then
-					idx += 8
-				end
+				term.canvas.attributes["fg_boldColor"] = Colors.Colors8[idx + 8]
 				term.canvas.fgColor = Colors.Colors8[idx]
 			elseif num >= 40 and num <= 47 then -- 3 bit background color
 				local idx = num % 10 + 1
-				term.canvas.attributes["bg_colorIndex"] = idx
 				term.canvas.bgColor = Colors.Colors8[idx]
 			elseif num == 49 then -- reset background color
-				term.canvas.attributes["bg_colorIndex"] = nil
 				local idx = Renderer.defaultBGindex
 				term.canvas.bgColor = Colors.Colors8[idx]
+			elseif num >= 90 and num <= 97 then -- bright foreground
+				term.canvas.attributes["fg_boldColor"] = nil
+				local idx = num % 10 + 1
+				term.canvas.fgColor = Colors.Colors8[idx]
+			elseif num >= 100 and num <= 107 then -- bright background
+				local idx = num % 10 + 1
+				term.canvas.bgColor = Colors.Colors8[idx]
 			elseif num == 38 or num == 48 then -- 8/24 bit foreground colors
+				term.canvas.attributes["fg_boldColor"] = nil
 				i += 1
 				local mode = numbers[i]
 				if mode == 5 then -- 8 bit
@@ -257,7 +257,7 @@ local SequenceHandlers: { [number]: (term: Terminal.Terminal, state: { number })
 			if not handler then
 				warn(`Unknown CSI final byte: {utf8.char(codepoint)}`)
 			else
-				handler(term, state)
+				handler(term, state, codepoint)
 			end
 			return true
 		end
@@ -276,12 +276,6 @@ local SequenceHandlers: { [number]: (term: Terminal.Terminal, state: { number })
 		return true
 	end,
 
-	-- Device Control String
-	[ESC("P")] = function(term, state)
-		-- Do nothing, the state will be processed in String Terminator sequence
-		return false
-	end,
-
 	-- String Terminator
 	[ESC("\\")] = function(term)
 		local codepoint = term.escapeCodepoint_previous
@@ -293,7 +287,35 @@ local SequenceHandlers: { [number]: (term: Terminal.Terminal, state: { number })
 		)
 		return true
 	end,
+
+	-- Set Application Keypad Mode
+	[ESC("=")] = function(term)
+		-- don't know what to do with this for now
+		return true
+	end,
+
+	-- Reset Application Keypad Mode
+	[ESC(">")] = function(term)
+		-- same as above
+		return true
+	end,
 }
+
+-- This function is used for escape sequences below that require String Terminator at the end
+local function consume()
+	return false
+end
+
+-- Device Control String
+SequenceHandlers[ESC("P")] = consume
+-- Operating System Command
+SequenceHandlers[ESC("]")] = consume
+-- Start of String
+SequenceHandlers[ESC("X")] = consume
+-- Privacy Message
+SequenceHandlers[ESC("^")] = consume
+-- Application Program Command
+SequenceHandlers[ESC("_")] = consume
 
 local function processEscapeCodepoint(term: Terminal.Terminal, codepoint: number): boolean
 	local state = term.escapingState
