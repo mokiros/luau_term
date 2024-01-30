@@ -1,7 +1,7 @@
 local Terminal = require(script.Parent.Parent.terminal)
 
 local ControlCodes = {
-	-- ESC
+	-- ESC - Escape
 	[0x1B] = function(term: Terminal.Terminal)
 		term.escaping = true
 
@@ -16,22 +16,22 @@ local ControlCodes = {
 		term.escapeCodepoint = nil
 	end,
 
-	-- BS
+	-- BS - Backspace
 	[0x08] = function(term: Terminal.Terminal)
 		Terminal.moveCursor(term, -1, 0, true)
 	end,
 
-	-- LF
+	-- LF - Line feed
 	[0x0A] = function(term: Terminal.Terminal)
 		Terminal.moveCursor(term, 0, 1)
 	end,
 
-	-- CR
+	-- CR - Carriage return
 	[0x0D] = function(term: Terminal.Terminal)
 		term.cursor = Vector2.new(0, term.cursor.Y)
 	end,
 
-	-- BEL
+	-- BEL - Bell
 	[0x07] = function(term: Terminal.Terminal)
 		-- TODO: Play sound
 	end,
