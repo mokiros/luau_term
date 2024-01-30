@@ -6,18 +6,27 @@ local parseUnifont = require(script.unifont)
 local font = script:WaitForChild("GetFont"):InvokeServer()
 local parsedFont = parseUnifont(font)
 
-local term = Terminal.createTerminal(40, 20, { normal = parsedFont })
+local term = Terminal.createTerminal(100, 40, { normal = parsedFont })
 local size = Vector2.new(term.canvas.canvasWidth, term.canvas.canvasHeight)
 
-local part = workspace:WaitForChild("terminal") :: Part
-part.Size = Vector3.new(term.canvas.width / 8, term.canvas.height / 4)
-local gui = part:WaitForChild("SurfaceGui") :: SurfaceGui
-local label = gui:WaitForChild("ImageLabel") :: ImageLabel
-local cursor = gui:WaitForChild("cursor") :: Frame
+local player = game:GetService("Players").LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui") :: PlayerGui
+
+local gui = Instance.new("ScreenGui")
+gui.ResetOnSpawn = false
+gui.Parent = PlayerGui
+local label = Instance.new("ImageLabel")
+label.AnchorPoint = Vector2.new(0.5, 0.5)
+label.Size = UDim2.fromOffset(term.canvas.canvasWidth, term.canvas.canvasHeight)
+label.Position = UDim2.fromScale(0.5, 0.5)
+label.Parent = gui
+
+local cursor = Instance.new("Frame")
+cursor.Size = UDim2.fromOffset(8, 16)
+cursor.Parent = label
 local image = Instance.new("EditableImage")
 image.Parent = label
 image:Resize(size)
-gui.CanvasSize = size
 
 function render()
 	image:WritePixels(Vector2.zero, size, term.canvas.buffer)
