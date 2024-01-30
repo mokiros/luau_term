@@ -12,7 +12,7 @@ local sessions = {}
 
 local sessionThread = function(session)
 	while true do
-		task.wait(1 / 20)
+		task.wait(1 / 10)
 		session.requesting = true
 		local input = session.inputBuffer
 		session.inputBuffer = ""
