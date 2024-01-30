@@ -29,6 +29,7 @@ local defaultBGindex = 1
 local function drawCodepoint(canvas: TerminalCanvas, codepoint: number, x: characterUnit, y: characterUnit): ()
 	local font = canvas.fonts.normal
 	local fallbackFont = font
+	local bg, fg = canvas.bgColor, canvas.fgColor
 	if canvas.attributes["italic"] then
 		local italic = canvas.fonts.italic
 		if italic then
@@ -40,6 +41,13 @@ local function drawCodepoint(canvas: TerminalCanvas, codepoint: number, x: chara
 		if bold then
 			font = bold
 		end
+		local boldfg = canvas.attributes["fg_boldColor"]
+		if boldfg then
+			fg = boldfg
+		end
+	end
+	if canvas.attributes["inverted"] then
+		bg, fg = fg, bg
 	end
 
 	local glyphData = font[codepoint]
@@ -52,7 +60,6 @@ local function drawCodepoint(canvas: TerminalCanvas, codepoint: number, x: chara
 	-- Only support 8x16 or 16x16 characters
 	local width = if len == 32 then 16 else if len == 16 then 8 else error(`Unsupported glyph width: {len}`)
 
-	local bg, fg = canvas.bgColor, canvas.fgColor
 	local canvasBuffer = canvas.buffer
 	local canvasWidth = canvas.canvasWidth
 
@@ -80,7 +87,7 @@ local function drawCodepoint(canvas: TerminalCanvas, codepoint: number, x: chara
 	end
 
 	if canvas.attributes["underline"] then
-		local lineOffset = 6 -- draw on 7th line
+		local lineOffset = 14 -- draw on 15th line
 		local start = (x0 + (y0 + lineOffset) * canvasWidth) * 4
 		for pos = start, start + 8 * 4, 4 do
 			canvasBuffer[pos + 1] = fg.R
@@ -89,7 +96,7 @@ local function drawCodepoint(canvas: TerminalCanvas, codepoint: number, x: chara
 		end
 	end
 	if canvas.attributes["strikethrough"] then
-		local lineOffset = 3 -- draw on 4th line
+		local lineOffset = 8 -- draw in the middle
 		local start = (x0 + (y0 + lineOffset) * canvasWidth) * 4
 		for pos = start, start + 8 * 4, 4 do
 			canvasBuffer[pos + 1] = fg.R
