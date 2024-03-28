@@ -1,5 +1,4 @@
 local Constants = require(script.Parent.Constants)
-local Handlers = require(script.Handlers)
 local TransitionTable = require(script.TransitionTable)
 
 local ParserState = Constants.ParserState
