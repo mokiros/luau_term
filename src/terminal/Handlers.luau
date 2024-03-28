@@ -1,11 +1,9 @@
 local createHandlers = require(script.Parent.Parent.parser.Handlers).createHandlers
-local Util = require(script.Parent.Util)
 local canvas = require(script.Parent.Parent.canvas)
 
 local Handlers = createHandlers()
 
 Handlers.print = function(term, code)
-	print("print", code)
 	local bitmapGlyph = term.font[code] or term.font[0xFFFD] or error(`Unknown codepoint: {code}`)
 	local cursor = term.cursor
 	canvas.drawBitmap(term.canvas, cursor.X, cursor.Y, bitmapGlyph, term.fgColor, term.bgColor)
