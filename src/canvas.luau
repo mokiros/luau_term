@@ -1,3 +1,7 @@
+--!optimize 2
+--!native
+--!strict
+
 export type RGBACanvas = { number }
 
 export type RGBA = { number }
@@ -11,8 +15,8 @@ export type Canvas = {
 
 local Canvas = {}
 
-Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, fgColor: RGBA, bgColor: RGBA): ()
-	if #fgColor ~= 4 or #bgColor ~= 4 then
+Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, fgColor: RGBA, bgColor: RGBA?): ()
+	if #fgColor ~= 4 or (bgColor and #bgColor ~= 4) then
 		error("Invalid colors: length must be 4")
 	end
 
@@ -36,21 +40,41 @@ Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, 
 
 	local canvasBuffer = canvas.canvas
 
-	for byteIndex = 0, len - 1, 4 do
-		local num = buffer.readu32(buf, byteIndex)
-		for bitIndex = 0, 31 do
-			local bit = bit32.extract(num, 31 - bitIndex, 1)
-			local idx = byteIndex * 8 + bitIndex
-			local x1 = pixelOffsetX + idx % pixelWidth
-			local y1 = pixelOffsetY + (idx // pixelWidth)
-			local pos = (x1 + y1 * canvasWidth) * 4
+	if bgColor then
+		for byteIndex = 0, len - 1, 4 do
+			local num = buffer.readu32(buf, byteIndex)
+			for bitIndex = 0, 31 do
+				local bit = bit32.extract(num, 31 - bitIndex, 1)
+				local idx = byteIndex * 8 + bitIndex
+				local x1 = pixelOffsetX + idx % pixelWidth
+				local y1 = pixelOffsetY + (idx // pixelWidth)
+				local pos = (x1 + y1 * canvasWidth) * 4
 
-			-- TODO: Check what's more performant: using `if` to pick color or use both colors with math
-			-- Also figure out if it's better to use `for i = 1,4 do` loop or these 4 statements
-			canvasBuffer[pos + 1] = fgColor[1] * bit + bgColor[1] * (1 - bit)
-			canvasBuffer[pos + 2] = fgColor[2] * bit + bgColor[2] * (1 - bit)
-			canvasBuffer[pos + 3] = fgColor[3] * bit + bgColor[3] * (1 - bit)
-			canvasBuffer[pos + 4] = fgColor[4] * bit + bgColor[4] * (1 - bit)
+				canvasBuffer[pos + 1] = fgColor[1] * bit + bgColor[1] * (1 - bit)
+				canvasBuffer[pos + 2] = fgColor[2] * bit + bgColor[2] * (1 - bit)
+				canvasBuffer[pos + 3] = fgColor[3] * bit + bgColor[3] * (1 - bit)
+				canvasBuffer[pos + 4] = fgColor[4] * bit + bgColor[4] * (1 - bit)
+			end
+		end
+	else
+		for byteIndex = 0, len - 1, 4 do
+			local num = buffer.readu32(buf, byteIndex)
+			for bitIndex = 0, 31 do
+				local bit = bit32.extract(num, 31 - bitIndex, 1)
+				local idx = byteIndex * 8 + bitIndex
+				local x1 = pixelOffsetX + idx % pixelWidth
+				local y1 = pixelOffsetY + (idx // pixelWidth)
+				local pos = (x1 + y1 * canvasWidth) * 4
+
+				if bit ~= 1 then
+					continue
+				end
+
+				canvasBuffer[pos + 1] = fgColor[1]
+				canvasBuffer[pos + 2] = fgColor[2]
+				canvasBuffer[pos + 3] = fgColor[3]
+				canvasBuffer[pos + 4] = fgColor[4]
+			end
 		end
 	end
 end
@@ -83,7 +107,30 @@ Canvas.fillScreen = function(canvas: Canvas, color: RGBA): ()
 	end
 end
 
-Canvas.shiftUp = function(canvas: Canvas, lines: number?): () end
+Canvas.fillBetween = function(canvas: Canvas, x1: number, y1: number, x2: number, y2: number, color: RGBA): ()
+	local w = canvas.width
+	local pos1 = x1 + y1 * w
+	local pos2 = x2 + y2 * w
+	if pos1 > pos2 then
+		pos1, pos2 = pos2, pos1
+	end
+	for pos = pos1, pos2 do
+		local x, y = pos % w, pos // w
+		Canvas.fillCell(canvas, x, y, color)
+	end
+end
+
+Canvas.shiftUp = function(canvas: Canvas, lines: number, color: RGBA): ()
+	local w = canvas.width * canvas.cellSize
+	local l = math.clamp(lines, 1, canvas.height)
+	local h = l * canvas.cellSize * 2
+	local startIndex = w * h * 4 + 1
+	local endIndex = w * canvas.height * canvas.cellSize * 2 * 4
+	table.move(canvas.canvas, startIndex, endIndex, 1)
+	for y = canvas.height - l, canvas.height - 1 do
+		Canvas.fillLine(canvas, y, color)
+	end
+end
 
 Canvas.createCanvas = function(w: number, h: number, cellSize: number?): Canvas
 	local cs = cellSize or 8
