@@ -189,6 +189,7 @@ export type Params = {
 	_isSubParam: boolean,
 	params: { number },
 	subParams: { [number]: { number } },
+	[number]: never,
 }
 
 export type Parser = {

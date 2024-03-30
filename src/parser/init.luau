@@ -38,7 +38,6 @@ end
 
 local function reset(parser: Constants.Parser)
 	resetParams(parser.params)
-	addParam(parser.params)
 	parser.collect = 0
 	parser.precedingJoinState = 0
 	parser.stringDataLength = 0
