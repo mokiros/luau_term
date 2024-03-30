@@ -17,6 +17,7 @@ local label = Instance.new("ImageLabel")
 label.AnchorPoint = Vector2.new(0.5, 0.5)
 label.Size = UDim2.fromOffset(size.X, size.Y)
 label.Position = UDim2.fromScale(0.5, 0.5)
+label.ResampleMode = Enum.ResamplerMode.Pixelated
 label.Parent = gui
 
 local cursor = Instance.new("Frame")
