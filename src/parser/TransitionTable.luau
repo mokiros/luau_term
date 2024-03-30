@@ -16,9 +16,6 @@ end
 local function add(code: number, state: number, action: number, next: number): ()
 	local k = bit32.bor(bit32.lshift(state, TableAccess.INDEX_STATE_SHIFT), code)
 	local v = bit32.bor(bit32.lshift(action, TableAccess.TRANSITION_ACTION_SHIFT), next)
-	if k == 32 then
-		print(debug.traceback())
-	end
 	buffer.writeu8(buf, k, v)
 end
 
