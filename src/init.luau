@@ -1,17 +1,14 @@
+local Constants = require(script.Constants)
 local Terminal = require(script.terminal)
-local ProcessCodepoint = require(script.ansi)
+local parser = require(script.parser)
 
-local function stdout(term: Terminal.Terminal, str: string)
+local function stdout(term: Constants.Terminal, str: string): ()
 	for i, codepoint in utf8.codes(str) do
-		local result = ProcessCodepoint(term, codepoint)
-		if result == true then
-			continue
-		end
-		Terminal.writeCodepoint(term, codepoint)
+		parser.parse(term, codepoint)
 	end
 end
 
 return {
-	createTerminal = Terminal.createTerminal,
 	stdout = stdout,
+	createTerminal = Terminal.createTerminal,
 }

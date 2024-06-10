@@ -1,13 +1,13 @@
 local Terminal = require(script.luau_term)
-local Renderer = require(script.luau_term.renderer)
-
 local parseUnifont = require(script.unifont)
 
 local font = script:WaitForChild("GetFont"):InvokeServer()
 local parsedFont = parseUnifont(font)
+local themes = require(script.colors)
+local defaultTheme = themes.Default
 
-local term = Terminal.createTerminal(100, 40, { normal = parsedFont })
-local size = Vector2.new(term.canvas.canvasWidth, term.canvas.canvasHeight)
+local term = Terminal.createTerminal(20, 10, parsedFont, defaultTheme)
+local size = Vector2.new(term.canvas.width * 8, term.canvas.height * 16)
 
 local player = game:GetService("Players").LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui") :: PlayerGui
@@ -17,8 +17,9 @@ gui.ResetOnSpawn = false
 gui.Parent = PlayerGui
 local label = Instance.new("ImageLabel")
 label.AnchorPoint = Vector2.new(0.5, 0.5)
-label.Size = UDim2.fromOffset(term.canvas.canvasWidth, term.canvas.canvasHeight)
+label.Size = UDim2.fromOffset(size.X, size.Y)
 label.Position = UDim2.fromScale(0.5, 0.5)
+label.ResampleMode = Enum.ResamplerMode.Pixelated
 label.Parent = gui
 
 local cursor = Instance.new("Frame")
@@ -29,7 +30,7 @@ image.Parent = label
 image:Resize(size)
 
 function render()
-	image:WritePixels(Vector2.zero, size, term.canvas.buffer)
+	image:WritePixels(Vector2.zero, size, term.canvas.canvas)
 	cursor.Position = UDim2.fromOffset(term.cursor.X * 8, term.cursor.Y * 16)
 end
 
