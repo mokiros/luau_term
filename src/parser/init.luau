@@ -119,7 +119,7 @@ local function parse(term: Constants.Terminal, code: number): ()
 	elseif a == ParserAction.DCS_HOOK then
 		parser.ident = add(parser.collect, code)
 		parser.stringDataLength = 0
-	elseif a == ParserAction.DCS_PUT or a == ParserAction.OSC_PUT then
+	elseif a == ParserAction.DCS_PUT then
 		if parser.stringDataLength < Constants.DCS_DATA_LIMIT then
 			buffer.writeu8(parser.stringData, parser.stringDataLength, code)
 			parser.stringDataLength += 1
@@ -140,6 +140,19 @@ local function parse(term: Constants.Terminal, code: number): ()
 		reset(parser)
 	elseif a == ParserAction.OSC_START then
 		parser.oscState = OscState.ID
+	elseif a == ParserAction.OSC_PUT then
+		if parser.oscState == OscState.ID then
+			if code == 0x3b then
+				parser.oscState = OscState.PAYLOAD
+			elseif code < 0x30 or code > 0x39 then
+				parser.oscState = OscState.ABORT
+			else
+				parser.ident = parser.ident * 10 + (code - 0x30)
+			end
+		elseif parser.oscState == OscState.PAYLOAD and parser.stringDataLength < Constants.DCS_DATA_LIMIT then
+			buffer.writeu8(parser.stringData, parser.stringDataLength, code)
+			parser.stringDataLength += 1
+		end
 	elseif a == ParserAction.OSC_END then
 		local success = code ~= 0x18 and code ~= 0x1a
 		if success then
