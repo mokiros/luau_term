@@ -105,6 +105,12 @@ Handlers.csi[fi({ final = "m" })] = function(term, params)
 			term.attributes.underline = true
 		elseif param == 7 then
 			term.attributes.inverted = true
+		elseif param == 22 then
+			term.attributes.bold = false
+		elseif param == 24 then
+			term.attributes.underline = false
+		elseif param == 27 then
+			term.attributes.inverted = false
 		elseif param == 38 or param == 48 then
 			i += 1
 			local mode = params.params[i]
