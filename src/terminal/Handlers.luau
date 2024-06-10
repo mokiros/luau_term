@@ -53,22 +53,44 @@ Handlers.csi[fi({ final = "D" })] = function(term, params)
 end
 
 Handlers.csi[fi({ final = "m" })] = function(term, params)
+	local function sgr0()
+		term.fgIndex = 8
+		term.bgIndex = 1
+		term.fgColor = term.theme[term.fgIndex]
+		term.bgColor = term.theme[term.bgIndex]
+	end
+	if params._length == 0 or (params._length == 1 and params.params[1] == 0) then
+		sgr0()
+	end
 	local i = 1
 	while i <= params._length do
-		local param = params.params[i]
-		if param == 38 or param == 48 then
+		if param >= 30 and param <= 37 then
+			term.fgIndex = (param % 10) + 1
+			term.fgColor = term.theme[term.fgIndex]
+		elseif param >= 40 and param <= 47 then
+			term.bgIndex = (param % 10) + 1
+			term.bgColor = term.theme[term.bgIndex]
+		elseif param >= 90 and param <= 97 then
+			term.fgIndex = (param % 10) + 9
+			term.fgColor = term.theme[term.fgIndex]
+		elseif param >= 100 and param <= 107 then
+			term.bgIndex = (param % 10) + 9
+			term.bgColor = term.theme[term.bgIndex]
+		elseif param == 0 then
+			sgr0()
+		elseif param == 38 or param == 48 then
 			i += 1
 			local mode = params.params[i]
-			if mode == 1 then
-				warn(`STUB: 8 bit color not implemented`)
-			elseif mode == 2 then
+			if mode == 2 then
 				local r, g, b = params.params[i + 1] or 0, params.params[i + 2] or 0, params.params[i + 3] or 0
 				i += 3
 				local clr = { r / 255, g / 255, b / 255, 1 }
 				if param == 38 then
 					term.fgColor = clr
+					term.fgIndex = 0
 				else
 					term.bgColor = clr
+					term.bgIndex = 0
 				end
 			end
 		else
