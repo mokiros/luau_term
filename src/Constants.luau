@@ -211,6 +211,12 @@ export type Terminal = {
 	handlers: Handlers,
 	cursor: Vector2,
 	font: { buffer },
+	attributes: {
+		bold: boolean,
+		underline: boolean,
+		inverted: boolean,
+	},
+	theme: { canvas.RGBA },
 	fgColor: canvas.RGBA,
 	fgIndex: number,
 	bgColor: canvas.RGBA,

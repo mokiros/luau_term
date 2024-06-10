@@ -8,10 +8,27 @@ local C0, C1 = Constants.C0, Constants.C1
 
 local Handlers = createHandlers()
 
+local underlineGlyph = buffer.create(8)
+buffer.writeu8(underlineGlyph, 6, 0xFF)
+
 Handlers.print = function(term, code)
 	local bitmapGlyph = term.font[code] or term.font[0xFFFD] or error(`Unknown codepoint: {code}`)
 	local cursor = term.cursor
-	canvas.drawBitmap(term.canvas, cursor.X, cursor.Y, bitmapGlyph, term.fgColor, term.bgColor)
+	local fgColor = term.fgColor
+	local fgIndex = term.fgIndex
+	local bgColor = term.bgColor
+	local bgIndex = term.bgIndex
+	if term.attributes.inverted then
+		fgColor, bgColor = bgColor, fgColor
+		fgIndex, bgIndex = bgIndex, fgIndex
+	end
+	if term.attributes.bold and fgIndex ~= 0 then
+		fgColor = term.theme[(fgIndex % 8) + 8]
+	end
+	canvas.drawBitmap(term.canvas, cursor.X, cursor.Y, bitmapGlyph, fgColor, bgColor)
+	if term.attributes.underline then
+		canvas.drawBitmap(term.canvas, cursor.X, cursor.Y, underlineGlyph, fgColor, bgColor)
+	end
 	Util.cursorForward(term, 1)
 end
 
@@ -54,6 +71,9 @@ end
 
 Handlers.csi[fi({ final = "m" })] = function(term, params)
 	local function sgr0()
+		term.attributes.bold = false
+		term.attributes.underline = false
+		term.attributes.inverted = false
 		term.fgIndex = 8
 		term.bgIndex = 1
 		term.fgColor = term.theme[term.fgIndex]
@@ -64,6 +84,7 @@ Handlers.csi[fi({ final = "m" })] = function(term, params)
 	end
 	local i = 1
 	while i <= params._length do
+		local param = params.params[i]
 		if param >= 30 and param <= 37 then
 			term.fgIndex = (param % 10) + 1
 			term.fgColor = term.theme[term.fgIndex]
@@ -78,6 +99,12 @@ Handlers.csi[fi({ final = "m" })] = function(term, params)
 			term.bgColor = term.theme[term.bgIndex]
 		elseif param == 0 then
 			sgr0()
+		elseif param == 1 then
+			term.attributes.bold = true
+		elseif param == 4 then
+			term.attributes.underline = true
+		elseif param == 7 then
+			term.attributes.inverted = true
 		elseif param == 38 or param == 48 then
 			i += 1
 			local mode = params.params[i]
