@@ -10,6 +10,11 @@ local function createTerminal(width: number, height: number, bitmapFont: { buffe
 		handlers = Handlers,
 		cursor = Vector2.new(0, 0),
 		font = bitmapFont,
+		attributes = {
+			bold = false,
+			underline = false,
+			inverted = false,
+		},
 		theme = theme,
 		fgColor = theme[8],
 		fgIndex = 8,
