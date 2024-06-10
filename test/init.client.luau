@@ -3,8 +3,10 @@ local parseUnifont = require(script.unifont)
 
 local font = script:WaitForChild("GetFont"):InvokeServer()
 local parsedFont = parseUnifont(font)
+local themes = require(script.colors)
+local defaultTheme = themes.Default
 
-local term = Terminal.createTerminal(20, 10, parsedFont)
+local term = Terminal.createTerminal(20, 10, parsedFont, defaultTheme)
 local size = Vector2.new(term.canvas.width * 8, term.canvas.height * 16)
 
 local player = game:GetService("Players").LocalPlayer
