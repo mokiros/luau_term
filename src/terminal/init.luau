@@ -9,6 +9,7 @@ local function createTerminal(width: number, height: number, bitmapFont: { buffe
 		parser = parser.createParser(),
 		handlers = Handlers,
 		cursor = Vector2.new(0, 0),
+		savedCursor = Vector2.new(0, 0),
 		font = bitmapFont,
 		attributes = {
 			bold = false,
