@@ -6,6 +6,8 @@ local parsedFont = parseUnifont(font)
 local themes = require(script.colors)
 local defaultTheme = themes.Default
 
+local TERM = 'vt100'
+
 local term = Terminal.createTerminal(100, 30, parsedFont, defaultTheme)
 local size = Vector2.new(term.currentScreen.canvas.width * 8, term.currentScreen.canvas.height * 16)
 
@@ -51,7 +53,7 @@ term.stdin = function(str: string)
 	inputBuffer ..= str
 end
 
-local sessionid = newSession:InvokeServer(term.currentScreen.canvas.width, term.currentScreen.canvas.height)
+local sessionid = newSession:InvokeServer(term.currentScreen.canvas.width, term.currentScreen.canvas.height, TERM)
 
 event.Event:Connect(function(str)
 	std:FireServer(sessionid, str)

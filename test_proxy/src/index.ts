@@ -12,9 +12,9 @@ class ShellSession {
 
 	private out = ''
 
-	constructor(w: number, h: number) {
+	constructor(w: number, h: number, name = 'xterm-256color') {
 		this.proc = pty.spawn('zsh', [], {
-			name: 'xterm-256color',
+			name,
 			cols: w,
 			rows: h,
 			cwd: process.env.HOME,
@@ -51,7 +51,7 @@ app.get('/session', (req, res) => {
 	const id = crypto.randomUUID()
 	const w = Number(req.query['w'] ?? 60)
 	const h = Number(req.query['h'] ?? 40)
-	const session = new ShellSession(w, h)
+	const session = new ShellSession(w, h, req.query['name'] as string)
 	Sessions.set(id, session)
 	res.json({ session: id, w, h })
 })
