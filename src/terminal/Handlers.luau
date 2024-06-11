@@ -126,6 +126,12 @@ Handlers.csi[fi({ final = "m" })] = function(term, params)
 					term.bgIndex = 0
 				end
 			end
+		elseif param == 39 then
+			term.fgIndex = 8
+			term.fgColor = term.theme[8]
+		elseif param == 49 then
+			term.bgIndex = 1
+			term.bgColor = term.theme[1]
 		else
 			warn(`Unimplemented SGR param: {param}`)
 		end
