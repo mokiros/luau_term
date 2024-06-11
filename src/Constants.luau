@@ -205,12 +205,20 @@ export type Parser = {
 	ident: number,
 }
 
-export type Terminal = {
+export type TerminalScreen = {
 	canvas: canvas.Canvas,
-	parser: Parser,
-	handlers: Handlers,
 	cursor: Vector2,
 	savedCursor: Vector2,
+}
+
+export type Terminal = {
+	currentScreen: TerminalScreen,
+	screens: {
+		normal: TerminalScreen,
+		alternate: TerminalScreen,
+	},
+	parser: Parser,
+	handlers: Handlers,
 	font: { buffer },
 	attributes: {
 		bold: boolean,
