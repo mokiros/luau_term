@@ -193,6 +193,12 @@ Handlers.csi[fi({ prefix = "?", final = "l" })] = function(term, params)
 	end
 end
 
+Handlers.osc[0] = function(term, data, dataLength)
+	local b = buffer.create(dataLength)
+	buffer.copy(b, 0, data, 0, dataLength)
+	print("icon name + title:", buffer.tostring(b))
+end
+
 -- ESC 7 - Save cursor
 Handlers.esc[0x37] = function(term)
 	local screen = term.currentScreen
