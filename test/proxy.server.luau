@@ -31,8 +31,8 @@ event.OnServerEvent:Connect(function(plr, id, str)
 	session.inputBuffer ..= str
 end)
 
-newSession.OnServerInvoke = function(player, w, h)
-	local session = Session.newSession(w, h)
+newSession.OnServerInvoke = function(player, w, h, name)
+	local session = Session.newSession(w, h, name)
 	sessions[session.id] = session
 	session.player = player
 	session.inputBuffer = ""

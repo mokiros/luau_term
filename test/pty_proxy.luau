@@ -10,14 +10,17 @@ export type Session = {
 	h: number,
 }
 
-local function newSession(w: number, h: number)
-	local data = HS:JSONDecode(HS:GetAsync(string.format(endpoint_newSession, w, h)))
+local function newSession(w: number, h: number, name: string?)
+	local url = string.format(endpoint_newSession, w, h)
+	if name ~= nil then
+		url ..= "&name=" .. name
+	end
+	local data = HS:JSONDecode(HS:GetAsync(url))
 	local id = data.session
-	local w, h = data.w, data.h
 	return {
 		id = id,
-		w = w,
-		h = h,
+		w = data.w,
+		h = data.h,
 	}
 end
 
