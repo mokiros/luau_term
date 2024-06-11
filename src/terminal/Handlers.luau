@@ -146,6 +146,16 @@ Handlers.csi[fi({ final = "K" })] = function(term, params)
 	end
 end
 
+-- ESC 7 - Save cursor
+Handlers.esc[0x37] = function(term)
+	term.savedCursor = term.cursor
+end
+
+-- ESC 8 - Restore cursor
+Handlers.esc[0x38] = function(term)
+	term.cursor = term.savedCursor
+end
+
 Handlers.exec[C0.CR] = function(term)
 	Util.setCursorPosition(term, 0, term.cursor.Y)
 end

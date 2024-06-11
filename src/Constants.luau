@@ -210,6 +210,7 @@ export type Terminal = {
 	parser: Parser,
 	handlers: Handlers,
 	cursor: Vector2,
+	savedCursor: Vector2,
 	font: { buffer },
 	attributes: {
 		bold: boolean,
