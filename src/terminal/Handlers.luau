@@ -156,6 +156,41 @@ Handlers.csi[fi({ final = "K" })] = function(term, params)
 	end
 end
 
+Handlers.csi[fi({ prefix = "?", final = "h" })] = function(term, params)
+	local screen = term.currentScreen
+	local mode = params.params[1] or 0
+	if mode == 47 or mode == 1047 or mode == 1049 then
+		if mode == 1049 then
+			screen.savedCursor = screen.cursor
+		end
+		if screen ~= term.screens.alternate then
+			screen = term.screens.alternate
+			screen.cursor = term.screens.normal.cursor
+			canvas.fillScreen(screen.canvas, term.theme[1])
+			term.currentScreen = screen
+		end
+	elseif mode == 2004 then
+		-- bracketed paste mode, ignore for now because no clipboard functionality
+	end
+end
+
+Handlers.csi[fi({ prefix = "?", final = "l" })] = function(term, params)
+	local screen = term.currentScreen
+	local mode = params.params[1] or 0
+	if mode == 47 or mode == 1047 or mode == 1049 then
+		if screen ~= term.screens.normal then
+			screen = term.screens.normal
+			screen.cursor = term.screens.alternate.cursor
+			term.currentScreen = screen
+		end
+		if mode == 1049 then
+			screen.cursor = screen.savedCursor
+		end
+	elseif mode == 2004 then
+		-- same as above
+	end
+end
+
 -- ESC 7 - Save cursor
 Handlers.esc[0x37] = function(term)
 	local screen = term.currentScreen
