@@ -1,4 +1,5 @@
 local CAS = game:GetService("ContextActionService")
+local StarterGui = game:GetService("StarterGui")
 
 local InputMap = require(script.Parent.inputMap)
 
@@ -19,6 +20,7 @@ local function handleInput(_, state: Enum.UserInputState, io: InputObject)
 	end
 	if io.KeyCode == Enum.KeyCode.RightAlt then
 		toggle = not toggle
+		StarterGui:SetCore("ChatBarDisabled", toggle)
 	end
 	if not toggle then
 		return Enum.ContextActionResult.Pass
