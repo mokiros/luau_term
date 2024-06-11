@@ -13,7 +13,8 @@ buffer.writeu8(underlineGlyph, 6, 0xFF)
 
 Handlers.print = function(term, code)
 	local bitmapGlyph = term.font[code] or term.font[0xFFFD] or error(`Unknown codepoint: {code}`)
-	local cursor = term.cursor
+	local screen = term.currentScreen
+	local cursor = screen.cursor
 	local fgColor = term.fgColor
 	local fgIndex = term.fgIndex
 	local bgColor = term.bgColor
@@ -25,9 +26,9 @@ Handlers.print = function(term, code)
 	if term.attributes.bold and fgIndex ~= 0 then
 		fgColor = term.theme[(fgIndex % 8) + 8]
 	end
-	canvas.drawBitmap(term.canvas, cursor.X, cursor.Y, bitmapGlyph, fgColor, bgColor)
+	canvas.drawBitmap(screen.canvas, cursor.X, cursor.Y, bitmapGlyph, fgColor, bgColor)
 	if term.attributes.underline then
-		canvas.drawBitmap(term.canvas, cursor.X, cursor.Y, underlineGlyph, fgColor, bgColor)
+		canvas.drawBitmap(screen.canvas, cursor.X, cursor.Y, underlineGlyph, fgColor, bgColor)
 	end
 	Util.cursorForward(term, 1)
 end
@@ -39,13 +40,21 @@ Handlers.csi[fi({ final = "H" })] = function(term, params)
 end
 
 Handlers.csi[fi({ final = "J" })] = function(term, params)
+	local screen = term.currentScreen
 	local mode = params.params[1] or 0
 	if mode == 0 then
-		canvas.fillBetween(term.canvas, term.cursor.X, term.cursor.Y, term.canvas.width - 1, term.canvas.height - 1, term.bgColor)
+		canvas.fillBetween(
+			screen.canvas,
+			screen.cursor.X,
+			screen.cursor.Y,
+			screen.canvas.width - 1,
+			screen.canvas.height - 1,
+			term.bgColor
+		)
 	elseif mode == 1 then
-		canvas.fillBetween(term.canvas, 0, 0, term.cursor.X, term.cursor.Y, term.bgColor)
+		canvas.fillBetween(screen.canvas, 0, 0, screen.cursor.X, screen.cursor.Y, term.bgColor)
 	elseif mode == 2 or mode == 3 then
-		canvas.fillScreen(term.canvas, term.bgColor)
+		canvas.fillScreen(screen.canvas, term.bgColor)
 	end
 end
 
@@ -140,24 +149,27 @@ Handlers.csi[fi({ final = "m" })] = function(term, params)
 end
 
 Handlers.csi[fi({ final = "K" })] = function(term, params)
+	local screen = term.currentScreen
 	local mode = params.params[1] or 0
 	if mode == 0 then
-		canvas.fillBetween(term.canvas, term.cursor.X, term.cursor.Y, term.canvas.width - 1, term.cursor.Y, term.bgColor)
+		canvas.fillBetween(screen.canvas, screen.cursor.X, screen.cursor.Y, screen.canvas.width - 1, screen.cursor.Y, term.bgColor)
 	end
 end
 
 -- ESC 7 - Save cursor
 Handlers.esc[0x37] = function(term)
-	term.savedCursor = term.cursor
+	local screen = term.currentScreen
+	screen.savedCursor = screen.cursor
 end
 
 -- ESC 8 - Restore cursor
 Handlers.esc[0x38] = function(term)
-	term.cursor = term.savedCursor
+	local screen = term.currentScreen
+	screen.cursor = screen.savedCursor
 end
 
 Handlers.exec[C0.CR] = function(term)
-	Util.setCursorPosition(term, 0, term.cursor.Y)
+	Util.setCursorPosition(term, 0, term.currentScreen.cursor.Y)
 end
 
 Handlers.exec[C0.LF] = function(term)

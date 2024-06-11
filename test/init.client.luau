@@ -6,8 +6,8 @@ local parsedFont = parseUnifont(font)
 local themes = require(script.colors)
 local defaultTheme = themes.Default
 
-local term = Terminal.createTerminal(20, 10, parsedFont, defaultTheme)
-local size = Vector2.new(term.canvas.width * 8, term.canvas.height * 16)
+local term = Terminal.createTerminal(100, 30, parsedFont, defaultTheme)
+local size = Vector2.new(term.currentScreen.canvas.width * 8, term.currentScreen.canvas.height * 16)
 
 local player = game:GetService("Players").LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui") :: PlayerGui
@@ -30,8 +30,8 @@ image.Parent = label
 image:Resize(size)
 
 function render()
-	image:WritePixels(Vector2.zero, size, term.canvas.canvas)
-	cursor.Position = UDim2.fromOffset(term.cursor.X * 8, term.cursor.Y * 16)
+	image:WritePixels(Vector2.zero, size, term.currentScreen.canvas.canvas)
+	cursor.Position = UDim2.fromOffset(term.currentScreen.cursor.X * 8, term.currentScreen.cursor.Y * 16)
 end
 
 function write(str: string)
@@ -51,7 +51,7 @@ term.stdin = function(str: string)
 	inputBuffer ..= str
 end
 
-local sessionid = newSession:InvokeServer(term.canvas.width, term.canvas.height)
+local sessionid = newSession:InvokeServer(term.currentScreen.canvas.width, term.currentScreen.canvas.height)
 
 event.Event:Connect(function(str)
 	std:FireServer(sessionid, str)
