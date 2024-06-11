@@ -35,7 +35,7 @@ local function identifier(id: FunctionIdentifier, finalRange: { number }?): numb
 
 	local final = b(id.final)
 	local final1 = (finalRange and finalRange[1] or 0x40)
-	local final2 = (finalRange and finalRange[1] or 0x7e)
+	local final2 = (finalRange and finalRange[2] or 0x7e)
 	if final < final1 or final > final2 then
 		error(`final must be in range {final1} .. {final2}`)
 	end
