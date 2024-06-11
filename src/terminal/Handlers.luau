@@ -36,7 +36,9 @@ end
 Handlers.error = function(term) end
 
 Handlers.csi[fi({ final = "H" })] = function(term, params)
-	Util.setCursorPosition(term, params.params[2] or 1, params.params[1] or 1)
+	local x = params.params[2] or 1
+	local y = params.params[1] or 1
+	Util.setCursorPosition(term, x - 1, y - 1)
 end
 
 Handlers.csi[fi({ final = "J" })] = function(term, params)
