@@ -80,6 +80,7 @@ Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, 
 end
 
 Canvas.fillCell = function(canvas: Canvas, x: number, y: number, color: RGBA): ()
+	local t = canvas.canvas
 	local pixelOffsetX = x * canvas.cellSize
 	local pixelOffsetY = y * canvas.cellSize * 2
 	local canvasWidth = canvas.width * canvas.cellSize
@@ -88,22 +89,37 @@ Canvas.fillCell = function(canvas: Canvas, x: number, y: number, color: RGBA): (
 		for x0 = 0, canvas.cellSize - 1 do
 			local x1 = pixelOffsetX + x0
 			local y1 = pixelOffsetY + y0
-			local pos = (x1 + y1 * canvasWidth) * 4
+			local i = (x1 + y1 * canvasWidth) * 4 + 1
 
-			table.move(color, 1, 4, pos + 1, canvas.canvas)
+			t[i] = color[1]
+			t[i + 1] = color[2]
+			t[i + 2] = color[3]
+			t[i + 3] = color[4]
 		end
 	end
 end
 
 Canvas.fillLine = function(canvas: Canvas, y: number, color: RGBA): ()
-	for x = 0, canvas.width - 1 do
-		Canvas.fillCell(canvas, x, y, color)
+	local t = canvas.canvas
+	local lineOffset = canvas.width * canvas.cellSize * canvas.cellSize * 2 * 4
+	local startIndex = lineOffset * y
+	local endIndex = lineOffset * (y + 1) - 1
+	for i = startIndex, endIndex, 4 do
+		t[i] = color[1]
+		t[i + 1] = color[2]
+		t[i + 2] = color[3]
+		t[i + 3] = color[4]
 	end
 end
 
 Canvas.fillScreen = function(canvas: Canvas, color: RGBA): ()
-	for y = 0, canvas.height - 1 do
-		Canvas.fillLine(canvas, y, color)
+	local t = canvas.canvas
+	local size = canvas.width * canvas.height * canvas.cellSize * canvas.cellSize * 2 * 4
+	for i = 1, size, 4 do
+		t[i] = color[1]
+		t[i + 1] = color[2]
+		t[i + 2] = color[3]
+		t[i + 3] = color[4]
 	end
 end
 
