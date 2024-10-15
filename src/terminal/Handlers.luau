@@ -126,9 +126,12 @@ Handlers.csi[fi({ final = "m" })] = function(term, params)
 			i += 1
 			local mode = params.params[i]
 			if mode == 2 then
-				local r, g, b = params.params[i + 1] or 0, params.params[i + 2] or 0, params.params[i + 3] or 0
+				local clr = buffer.create(4)
+				buffer.writeu8(clr, 0, params.params[i + 1] or 0)
+				buffer.writeu8(clr, 1, params.params[i + 2] or 0)
+				buffer.writeu8(clr, 2, params.params[i + 3] or 0)
+				buffer.writeu8(clr, 3, 255)
 				i += 3
-				local clr = { r / 255, g / 255, b / 255, 1 }
 				if param == 38 then
 					term.fgColor = clr
 					term.fgIndex = 0

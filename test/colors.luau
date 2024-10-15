@@ -19,11 +19,16 @@ local DefaultTheme = table.freeze({
 	Color3.fromRGB(255, 255, 255),
 })
 
-local function ColorsToRGBA(colors: { Color3 }): { { number } }
+local function ColorsToRGBA(colors: { Color3 }): { buffer }
 	local t = table.create(16)
 	for i = 1, 16 do
 		local clr = colors[i]
-		t[i] = { clr.R, clr.G, clr.B, 1 }
+		local buf = buffer.create(4)
+		buffer.writeu8(buf, 0, math.round(clr.R * 255))
+		buffer.writeu8(buf, 1, math.round(clr.G * 255))
+		buffer.writeu8(buf, 2, math.round(clr.B * 255))
+		buffer.writeu8(buf, 3, 255)
+		t[i] = buf
 	end
 	return t
 end
