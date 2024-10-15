@@ -32,7 +32,7 @@ image.Parent = label
 image:Resize(size)
 
 function render()
-	image:WritePixels(Vector2.zero, size, term.currentScreen.canvas.canvas)
+	image:WritePixelsBuffer(Vector2.zero, size, term.currentScreen.canvas.canvas)
 	cursor.Position = UDim2.fromOffset(term.currentScreen.cursor.X * 8, term.currentScreen.cursor.Y * 16)
 end
 

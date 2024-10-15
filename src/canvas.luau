@@ -2,12 +2,13 @@
 --!native
 --!strict
 
-export type RGBACanvas = { number }
+export type RGBACanvas = buffer
 
-export type RGBA = { number }
+export type RGBA = buffer
 
 export type Canvas = {
 	canvas: RGBACanvas,
+	length: number,
 	width: number,
 	height: number,
 	cellSize: number,
@@ -16,7 +17,7 @@ export type Canvas = {
 local Canvas = {}
 
 Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, fgColor: RGBA, bgColor: RGBA?): ()
-	if #fgColor ~= 4 or (bgColor and #bgColor ~= 4) then
+	if buffer.len(fgColor) ~= 4 or (bgColor and buffer.len(bgColor) ~= 4) then
 		error("Invalid colors: length must be 4")
 	end
 
@@ -32,7 +33,7 @@ Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, 
 	local canvasWidth = canvas.width * canvas.cellSize
 
 	-- Overdraw check
-	-- Only checks if the overdraw happens past the size of the canvas table to prevent length from changing
+	-- Only checks if the overdraw happens past the size of the canvas table to prevent out of bounds errors
 	if pixelOffsetX + pixelWidth > canvasWidth and pixelOffsetY + cellHeight >= canvas.height * canvas.cellSize then
 		-- TODO: Handle overdraw without an error, but also without branching in the loops below
 		error(`Overdraw detected, buffer length: {len}, cell size: {canvas.cellSize}, x: {x}, y: {y}`)
@@ -50,10 +51,11 @@ Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, 
 				local y1 = pixelOffsetY + (idx // pixelWidth)
 				local pos = (x1 + y1 * canvasWidth) * 4
 
-				canvasBuffer[pos + 1] = fgColor[1] * bit + bgColor[1] * (1 - bit)
-				canvasBuffer[pos + 2] = fgColor[2] * bit + bgColor[2] * (1 - bit)
-				canvasBuffer[pos + 3] = fgColor[3] * bit + bgColor[3] * (1 - bit)
-				canvasBuffer[pos + 4] = fgColor[4] * bit + bgColor[4] * (1 - bit)
+				--[[
+					TODO: find out the performance impact of the and/or check,
+					and find out if there are branchless alternatives that would be faster
+				]]
+				buffer.copy(canvasBuffer, pos, bit == 1 and fgColor or bgColor, 0, 4)
 			end
 		end
 	else
@@ -70,17 +72,14 @@ Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, 
 					continue
 				end
 
-				canvasBuffer[pos + 1] = fgColor[1]
-				canvasBuffer[pos + 2] = fgColor[2]
-				canvasBuffer[pos + 3] = fgColor[3]
-				canvasBuffer[pos + 4] = fgColor[4]
+				buffer.copy(canvasBuffer, pos, fgColor, 0, 4)
 			end
 		end
 	end
 end
 
 Canvas.fillCell = function(canvas: Canvas, x: number, y: number, color: RGBA): ()
-	local t = canvas.canvas
+	local buf = canvas.canvas
 	local pixelOffsetX = x * canvas.cellSize
 	local pixelOffsetY = y * canvas.cellSize * 2
 	local canvasWidth = canvas.width * canvas.cellSize
@@ -89,37 +88,26 @@ Canvas.fillCell = function(canvas: Canvas, x: number, y: number, color: RGBA): (
 		for x0 = 0, canvas.cellSize - 1 do
 			local x1 = pixelOffsetX + x0
 			local y1 = pixelOffsetY + y0
-			local i = (x1 + y1 * canvasWidth) * 4 + 1
-
-			t[i] = color[1]
-			t[i + 1] = color[2]
-			t[i + 2] = color[3]
-			t[i + 3] = color[4]
+			local i = (x1 + y1 * canvasWidth) * 4
+			buffer.copy(buf, i, color, 0, 4)
 		end
 	end
 end
 
 Canvas.fillLine = function(canvas: Canvas, y: number, color: RGBA): ()
-	local t = canvas.canvas
-	local lineOffset = canvas.width * canvas.cellSize * canvas.cellSize * 2 * 4
+	local buf = canvas.canvas
+	local lineOffset = canvas.length / canvas.height
 	local startIndex = lineOffset * y
-	local endIndex = lineOffset * (y + 1) - 1
+	local endIndex = startIndex + lineOffset - 1
 	for i = startIndex, endIndex, 4 do
-		t[i] = color[1]
-		t[i + 1] = color[2]
-		t[i + 2] = color[3]
-		t[i + 3] = color[4]
+		buffer.copy(buf, i, color, 0, 4)
 	end
 end
 
 Canvas.fillScreen = function(canvas: Canvas, color: RGBA): ()
-	local t = canvas.canvas
-	local size = canvas.width * canvas.height * canvas.cellSize * canvas.cellSize * 2 * 4
-	for i = 1, size, 4 do
-		t[i] = color[1]
-		t[i + 1] = color[2]
-		t[i + 2] = color[3]
-		t[i + 3] = color[4]
+	local buf = canvas.canvas
+	for i = 0, canvas.length - 1, 4 do
+		buffer.copy(buf, i, color, 0, 4)
 	end
 end
 
@@ -137,28 +125,28 @@ Canvas.fillBetween = function(canvas: Canvas, x1: number, y1: number, x2: number
 end
 
 Canvas.shiftUp = function(canvas: Canvas, lines: number, color: RGBA): ()
-	local w = canvas.width * canvas.cellSize
-	local l = math.clamp(lines, 1, canvas.height)
-	local h = l * canvas.cellSize * 2
-	local startIndex = w * h * 4 + 1
-	local endIndex = w * canvas.height * canvas.cellSize * 2 * 4
-	table.move(canvas.canvas, startIndex, endIndex, 1)
-	for y = canvas.height - l, canvas.height - 1 do
+	local clampedLines = math.clamp(lines, 1, canvas.height)
+	local heightInPixels = clampedLines * canvas.cellSize * 2
+	local widthInPixels = canvas.width * canvas.cellSize
+	local offset = heightInPixels * widthInPixels * 4
+	local buf = canvas.canvas
+	buffer.copy(buf, 0, buf, offset, canvas.length - offset)
+	for y = canvas.height - clampedLines, canvas.height - 1 do
 		Canvas.fillLine(canvas, y, color)
 	end
 end
 
 Canvas.createCanvas = function(w: number, h: number, cellSize: number?): Canvas
 	local cs = cellSize or 8
-	local pixelWidth = w * cs
-	local pixelHeight = h * cs * 2
+	local len = w * h * cs * cs * 2 * 4
 	local canvas: Canvas = {
-		canvas = table.create(pixelWidth * pixelHeight * 4, 1),
+		canvas = buffer.create(len),
+		length = len,
 		width = w,
 		height = h,
 		cellSize = cs,
 	}
-	Canvas.fillScreen(canvas, { 0, 0, 0, 1 })
+	Canvas.fillScreen(canvas, buffer.fromstring("\0\0\0\255"))
 	return canvas
 end
 
