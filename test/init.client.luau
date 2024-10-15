@@ -6,7 +6,7 @@ local parsedFont = parseUnifont(font)
 local themes = require(script.colors)
 local defaultTheme = themes.Default
 
-local TERM = 'vt100'
+local TERM = "vt100"
 
 local term = Terminal.createTerminal(100, 30, parsedFont, defaultTheme)
 local size = Vector2.new(term.currentScreen.canvas.width * 8, term.currentScreen.canvas.height * 16)

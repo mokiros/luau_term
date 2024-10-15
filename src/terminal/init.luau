@@ -9,11 +9,13 @@ local function createTerminal(width: number, height: number, bitmapFont: { buffe
 		cursor = Vector2.new(0, 0),
 		savedCursor = Vector2.new(0, 0),
 	}
+
 	local alternateScreen: Constants.TerminalScreen = {
 		canvas = canvas.createCanvas(width, height, 8),
 		cursor = Vector2.new(0, 0),
 		savedCursor = Vector2.new(0, 0),
-		}
+	}
+
 	local terminal: Constants.Terminal = {
 		currentScreen = normalScreen,
 		screens = {
@@ -33,9 +35,11 @@ local function createTerminal(width: number, height: number, bitmapFont: { buffe
 		fgIndex = 8,
 		bgColor = theme[1],
 		bgIndex = 1,
-		}
+	}
+
 	canvas.fillScreen(normalScreen.canvas, terminal.bgColor)
 	canvas.fillScreen(alternateScreen.canvas, terminal.bgColor)
+
 	return terminal
 end
 
