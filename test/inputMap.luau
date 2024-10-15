@@ -1,4 +1,12 @@
--- Alt, Ctrl, Shift, Meta
+-- A table for translating KeyCodes into terminal input
+-- Explanation for the 0bxxxx indexes:
+-- bit 1 (0b1xxx) - Alt
+-- bit 2 (0bx1xx) - Ctrl
+-- bit 3 (0bxx1x) - Shift
+-- bit 4 (0bxxx1) - Meta (Windows/Super key)
+
+-- Although unused for now, it's possible to have combinations of the modifiers above, for example:
+-- 0b1100 - Ctrl + Alt
 
 return {
 	[0b0000] = {
