@@ -225,4 +225,16 @@ Handlers.exec[C0.BS] = function(term)
 	Util.moveCursor(term, -1, 0)
 end
 
+Handlers.exec[C0.BEL] = function(term)
+	-- ignore the bell for now
+end
+
+Handlers.exec[C0.NUL] = function(term)
+	-- null character, ignore
+end
+
+Handlers.exec[C0.SI] = function(term)
+	-- TODO: set up charsets
+end
+
 return Handlers
