@@ -28,7 +28,7 @@ Handlers.print = function(term, code)
 	end
 	canvas.drawBitmap(screen.canvas, cursor.X, cursor.Y, bitmapGlyph, fgColor, bgColor)
 	if term.attributes.underline then
-		canvas.drawBitmap(screen.canvas, cursor.X, cursor.Y, underlineGlyph, fgColor, bgColor)
+		canvas.drawBitmap(screen.canvas, cursor.X, cursor.Y, underlineGlyph, fgColor)
 	end
 	Util.cursorForward(term, 1)
 end
