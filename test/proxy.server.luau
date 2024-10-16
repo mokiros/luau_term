@@ -17,7 +17,9 @@ local sessionThread = function(session)
 		local input = session.inputBuffer
 		session.inputBuffer = ""
 		local data = Session.update(session, input)
-		event:FireClient(session.player, session.id, data)
+		if #data > 0 then
+			event:FireClient(session.player, session.id, data)
+		end
 		session.lastRequest = tick()
 		session.requesting = false
 	end
