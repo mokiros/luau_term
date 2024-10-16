@@ -8,6 +8,10 @@ local C0, C1 = Constants.C0, Constants.C1
 
 local Handlers = createHandlers()
 
+local function fiEsc(params)
+	return fi(params, { 0x30, 0x7e })
+end
+
 local underlineGlyph = buffer.create(8)
 buffer.writeu8(underlineGlyph, 6, 0xFF)
 
@@ -202,13 +206,13 @@ Handlers.osc[0] = function(term, data, dataLength)
 end
 
 -- ESC 7 - Save cursor
-Handlers.esc[0x37] = function(term)
+Handlers.esc[fiEsc({ final = "7" })] = function(term)
 	local screen = term.currentScreen
 	screen.savedCursor = screen.cursor
 end
 
 -- ESC 8 - Restore cursor
-Handlers.esc[0x38] = function(term)
+Handlers.esc[fiEsc({ final = "8" })] = function(term)
 	local screen = term.currentScreen
 	screen.cursor = screen.savedCursor
 end
