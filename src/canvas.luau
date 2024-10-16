@@ -4,7 +4,7 @@
 
 export type RGBACanvas = buffer
 
-export type RGBA = buffer
+export type RGBA = number
 
 export type Canvas = {
 	canvas: RGBACanvas,
@@ -55,7 +55,7 @@ Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, 
 					TODO: find out the performance impact of the and/or check,
 					and find out if there are branchless alternatives that would be faster
 				]]
-				buffer.copy(canvasBuffer, pos, bit == 1 and fgColor or bgColor, 0, 4)
+				buffer.writeu32(canvasBuffer, pos, bit and fgColor or bgColor)
 			end
 		end
 	else
@@ -72,7 +72,7 @@ Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, 
 					continue
 				end
 
-				buffer.copy(canvasBuffer, pos, fgColor, 0, 4)
+				buffer.writeu32(canvasBuffer, pos, fgColor)
 			end
 		end
 	end
@@ -89,7 +89,7 @@ Canvas.fillCell = function(canvas: Canvas, x: number, y: number, color: RGBA): (
 			local x1 = pixelOffsetX + x0
 			local y1 = pixelOffsetY + y0
 			local i = (x1 + y1 * canvasWidth) * 4
-			buffer.copy(buf, i, color, 0, 4)
+			buffer.writeu32(buf, i, color)
 		end
 	end
 end
@@ -100,14 +100,14 @@ Canvas.fillLine = function(canvas: Canvas, y: number, color: RGBA): ()
 	local startIndex = lineOffset * y
 	local endIndex = startIndex + lineOffset - 1
 	for i = startIndex, endIndex, 4 do
-		buffer.copy(buf, i, color, 0, 4)
+		buffer.writeu32(buf, i, color)
 	end
 end
 
 Canvas.fillScreen = function(canvas: Canvas, color: RGBA): ()
 	local buf = canvas.canvas
 	for i = 0, canvas.length - 1, 4 do
-		buffer.copy(buf, i, color, 0, 4)
+		buffer.writeu32(buf, i, color)
 	end
 end
 
@@ -146,7 +146,7 @@ Canvas.createCanvas = function(w: number, h: number, cellSize: number?): Canvas
 		height = h,
 		cellSize = cs,
 	}
-	Canvas.fillScreen(canvas, buffer.fromstring("\0\0\0\255"))
+	Canvas.fillScreen(canvas, 0x000000ff)
 	return canvas
 end
 
