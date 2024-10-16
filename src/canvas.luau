@@ -51,11 +51,7 @@ Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, 
 				local y1 = pixelOffsetY + (idx // pixelWidth)
 				local pos = (x1 + y1 * canvasWidth) * 4
 
-				--[[
-					TODO: find out the performance impact of the and/or check,
-					and find out if there are branchless alternatives that would be faster
-				]]
-				buffer.writeu32(canvasBuffer, pos, bit and fgColor or bgColor)
+				buffer.writeu32(canvasBuffer, pos, fgColor * bit + bgColor * (1 - bit))
 			end
 		end
 	else
@@ -68,11 +64,9 @@ Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, 
 				local y1 = pixelOffsetY + (idx // pixelWidth)
 				local pos = (x1 + y1 * canvasWidth) * 4
 
-				if bit ~= 1 then
-					continue
-				end
+				local bg = buffer.readu32(canvasBuffer, pos)
 
-				buffer.writeu32(canvasBuffer, pos, fgColor)
+				buffer.writeu32(canvasBuffer, pos, fgColor * bit + bg * (1 - bit))
 			end
 		end
 	end
