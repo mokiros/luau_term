@@ -1,4 +1,3 @@
-local createHandlers = require(script.Parent.Parent.parser.Handlers).createHandlers
 local canvas = require(script.Parent.Parent.canvas)
 local Constants = require(script.Parent.Parent.Constants)
 local Util = require(script.Parent.Util)
@@ -6,7 +5,15 @@ local Util = require(script.Parent.Util)
 local fi = require(script.Parent.Parent.parser.FunctionIdentifier).identifier
 local C0, C1 = Constants.C0, Constants.C1
 
-local Handlers = createHandlers()
+local Handlers: Constants.Handlers = {
+	csi = {},
+	dcs = {},
+	osc = {},
+	esc = {},
+	exec = {},
+	print = function() end,
+	error = function() end,
+}
 
 local function fiEsc(params)
 	return fi(params, { 0x30, 0x7e })
