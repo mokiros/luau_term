@@ -88,21 +88,31 @@ Canvas.fillCell = function(canvas: Canvas, x: number, y: number, color: RGBA): (
 	end
 end
 
-Canvas.fillLine = function(canvas: Canvas, y: number, color: RGBA): ()
+Canvas.fillLines = function(canvas: Canvas, startY: number, lineCount: number, color: RGBA): ()
 	local buf = canvas.canvas
-	local lineOffset = canvas.length / canvas.height
-	local startIndex = lineOffset * y
-	local endIndex = startIndex + lineOffset - 1
-	for i = startIndex, endIndex, 4 do
-		buffer.writeu32(buf, i, color)
+	local lineLength = canvas.length / canvas.height
+	local startOffset = startY * lineLength
+	local totalPixelLength = lineLength / 4 * lineCount
+
+	-- Instead of writing to each pixel individually, the code below
+	-- copies previously written chunks, so on every iteration it copies
+	-- twice as much
+	local n = math.log(totalPixelLength, 2)
+	buffer.writeu32(buf, startOffset, color)
+	local count = 1
+	for i = 2, n do
+		buffer.copy(buf, startOffset + count * 4, buf, startOffset, count * 4)
+		count *= 2
+	end
+
+	local remaining = totalPixelLength - count
+	if remaining > 0 then
+		buffer.copy(buf, startOffset + count * 4, buf, startOffset, remaining * 4)
 	end
 end
 
 Canvas.fillScreen = function(canvas: Canvas, color: RGBA): ()
-	local buf = canvas.canvas
-	for i = 0, canvas.length - 1, 4 do
-		buffer.writeu32(buf, i, color)
-	end
+	Canvas.fillLines(canvas, 0, canvas.height, color)
 end
 
 Canvas.fillBetween = function(canvas: Canvas, x1: number, y1: number, x2: number, y2: number, color: RGBA): ()
@@ -126,9 +136,7 @@ Canvas.shiftDown = function(canvas: Canvas, lines: number, color: RGBA): ()
 	local buf = canvas.canvas
 	buffer.copy(buf, lineOffset, buf, 0, canvas.length - lineOffset)
 
-	for y = 0, clampedLines - 1 do
-		Canvas.fillLine(canvas, y, color)
-	end
+	Canvas.fillLines(canvas, 0, clampedLines, color)
 end
 
 Canvas.shiftUp = function(canvas: Canvas, lines: number, color: RGBA): ()
@@ -139,9 +147,7 @@ Canvas.shiftUp = function(canvas: Canvas, lines: number, color: RGBA): ()
 	local buf = canvas.canvas
 	buffer.copy(buf, 0, buf, lineOffset, canvas.length - lineOffset)
 
-	for y = 1, clampedLines do
-		Canvas.fillLine(canvas, canvas.height - y, color)
-	end
+	Canvas.fillLines(canvas, canvas.height - clampedLines, clampedLines, color)
 end
 
 Canvas.createCanvas = function(w: number, h: number, cellSize: number?): Canvas
