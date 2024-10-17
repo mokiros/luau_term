@@ -118,15 +118,29 @@ Canvas.fillBetween = function(canvas: Canvas, x1: number, y1: number, x2: number
 	end
 end
 
+Canvas.shiftDown = function(canvas: Canvas, lines: number, color: RGBA): ()
+	local clampedLines = math.clamp(lines, 1, canvas.height)
+	local lineHeight = canvas.length / canvas.height
+	local lineOffset = clampedLines * lineHeight
+
+	local buf = canvas.canvas
+	buffer.copy(buf, lineOffset, buf, 0, canvas.length - lineOffset)
+
+	for y = 0, clampedLines - 1 do
+		Canvas.fillLine(canvas, y, color)
+	end
+end
+
 Canvas.shiftUp = function(canvas: Canvas, lines: number, color: RGBA): ()
 	local clampedLines = math.clamp(lines, 1, canvas.height)
-	local heightInPixels = clampedLines * canvas.cellSize * 2
-	local widthInPixels = canvas.width * canvas.cellSize
-	local offset = heightInPixels * widthInPixels * 4
+	local lineHeight = canvas.length / canvas.height
+	local lineOffset = clampedLines * lineHeight
+
 	local buf = canvas.canvas
-	buffer.copy(buf, 0, buf, offset, canvas.length - offset)
-	for y = canvas.height - clampedLines, canvas.height - 1 do
-		Canvas.fillLine(canvas, y, color)
+	buffer.copy(buf, 0, buf, lineOffset, canvas.length - lineOffset)
+
+	for y = 1, clampedLines do
+		Canvas.fillLine(canvas, canvas.height - y, color)
 	end
 end
 
