@@ -163,6 +163,10 @@ Handlers.csi[fi({ final = "m" })] = function(term, params)
 	end
 end
 
+Handlers.csi[fi({ final = "t" })] = function(term, params)
+	-- TODO: window manipulations and reports
+end
+
 Handlers.csi[fi({ final = "K" })] = function(term, params)
 	local screen = term.currentScreen
 	local mode = params.params[1] or 0
@@ -227,6 +231,11 @@ end
 -- ESC M - Move cursor up
 Handlers.esc[fiEsc({ final = "M" })] = function(term)
 	Util.cursorUp(term, 1)
+end
+
+-- ESC (B
+Handlers.esc[fiEsc({ intermediates = { "(" }, final = "B" })] = function(term)
+	-- set charset
 end
 
 Handlers.exec[C0.CR] = function(term)
