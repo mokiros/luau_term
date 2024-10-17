@@ -217,6 +217,11 @@ Handlers.esc[fiEsc({ final = "8" })] = function(term)
 	screen.cursor = screen.savedCursor
 end
 
+-- ESC M - Move cursor up
+Handlers.esc[fiEsc({ final = "M" })] = function(term)
+	Util.cursorUp(term, 1)
+end
+
 Handlers.exec[C0.CR] = function(term)
 	Util.setCursorPosition(term, 0, term.currentScreen.cursor.Y)
 end

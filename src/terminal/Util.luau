@@ -25,7 +25,13 @@ Util.cursorBackward = function(term: Constants.Terminal, n: number?)
 end
 
 Util.cursorUp = function(term: Constants.Terminal, n: number?)
-	term.currentScreen.cursor = Vector2.new(term.currentScreen.cursor.X, math.max(term.currentScreen.cursor.Y - (n or 1), 0))
+	local y = term.currentScreen.cursor.Y - (n or 1)
+	local scroll = math.abs(math.min(y, 0))
+	if scroll > 0 then
+		canvas.shiftDown(term.currentScreen.canvas, scroll, term.bgColor)
+		y = 0
+	end
+	term.currentScreen.cursor = Vector2.new(term.currentScreen.cursor.X, y)
 end
 
 Util.cursorDown = function(term: Constants.Terminal, n: number?)
