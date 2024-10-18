@@ -5,7 +5,7 @@
 		"$className": "DataModel",
 		"ReplicatedStorage": {
 			"test": {
-				"$path": "test",
+				"$path": "example",
 				"luau_term": {
 					"$path": "src"
 				}
