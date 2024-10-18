@@ -2,9 +2,6 @@ local Terminal = require(script.luau_term)
 
 local std = script:WaitForChild("stdio") :: RemoteEvent
 local newSession = script:WaitForChild("NewSession") :: RemoteFunction
-local event = Instance.new("BindableEvent")
-event.Name = "InputEvent"
-event.Parent = script
 
 local font = script:WaitForChild("GetFont"):InvokeServer()
 local parseUnifont = require(script.unifont)
@@ -60,12 +57,22 @@ local image = Instance.new("EditableImage")
 image.Parent = label
 image:Resize(pixelSize)
 
-event.Event:Connect(function(str)
-	std:FireServer(sessionid, str)
-end)
-
 std.OnClientEvent:Connect(function(id, str)
 	Terminal.stdout(term, str)
 	image:WritePixelsBuffer(Vector2.zero, pixelSize, term.currentScreen.canvas.canvas)
 	cursor.Position = UDim2.fromOffset(term.currentScreen.cursor.X * 8, term.currentScreen.cursor.Y * 16)
+end)
+
+local createInput = require(script.input)
+local inputBox, inputEvent = createInput()
+
+inputBox.ZIndex = 999
+inputBox.Size = UDim2.fromScale(1, 1)
+inputBox.Transparency = 1
+inputBox.TextTransparency = 1
+inputBox.TextSize = 0
+inputBox.Parent = label
+
+inputEvent.Event:Connect(function(str)
+	std:FireServer(sessionid, str)
 end)
