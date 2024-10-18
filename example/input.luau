@@ -1,11 +1,6 @@
-local CAS = game:GetService("ContextActionService")
-local StarterGui = game:GetService("StarterGui")
+local UIS = game:GetService("UserInputService")
 
-local event = Instance.new("BindableEvent")
-event.Name = "InputEvent"
-event.Parent = script
-
-local toggle = false
+local inputBoxes: { [TextBox]: BindableEvent } = {}
 
 local function modifierBitMask(io: InputObject)
 	local ctrl = io:IsModifierKeyDown(Enum.ModifierKey.Ctrl)
@@ -14,16 +9,14 @@ local function modifierBitMask(io: InputObject)
 	return bit32.band(ctrl and 0b0011111 or 0b1111111, shift and 0b1011111 or 0b1111111)
 end
 
-local function handleInput(_, state: Enum.UserInputState, io: InputObject)
-	if state ~= Enum.UserInputState.Begin then
-		return Enum.ContextActionResult.Pass
+local function handleInput(io: InputObject, handledByEngine: boolean)
+	if io.UserInputState ~= Enum.UserInputState.Begin or not handledByEngine then
+		return
 	end
-	if io.KeyCode == Enum.KeyCode.RightAlt then
-		toggle = not toggle
-		StarterGui:SetCore("ChatBarDisabled", toggle)
-	end
-	if not toggle then
-		return Enum.ContextActionResult.Pass
+	local focusedBox = UIS:GetFocusedTextBox()
+	local event = focusedBox and inputBoxes[focusedBox] or nil
+	if not event then
+		return
 	end
 	local code = io.KeyCode.Value
 	if code > 0b100010000 and code < 0b100010101 then
@@ -34,25 +27,34 @@ local function handleInput(_, state: Enum.UserInputState, io: InputObject)
 		local t = { "", "1;3", "1;5", "1;7", "", "1;4", "1;6", "1;8" }
 		local str = string.format("\27[%s%s", t[shift + ctrl + alt + 1], string.char(bit32.band(code, 0b111) + 0b1000000))
 		event:Fire(str)
-		return Enum.ContextActionResult.Sink
+		return
 	elseif code > 127 then
-		return Enum.ContextActionResult.Pass
+		return
 	end
 	local mod = modifierBitMask(io)
 	local str = string.char(bit32.band(code, mod))
-	if not str then
-		return Enum.ContextActionResult.Pass
+	if str then
+		event:Fire(str)
 	end
-	event:Fire(str)
-	return Enum.ContextActionResult.Sink
 end
 
-CAS:BindActionAtPriority(
-	"TerminalInput",
-	handleInput,
-	false,
-	Enum.ContextActionPriority.High.Value + 10,
-	Enum.UserInputType.Keyboard
-)
+UIS.InputBegan:Connect(handleInput)
 
-return event
+return function()
+	local box = Instance.new("TextBox")
+	box.Name = "InputBox"
+	box.MultiLine = true
+	box.ClearTextOnFocus = true
+	local event = Instance.new("BindableEvent")
+	event.Name = "InputEvent"
+	event.Parent = box
+	inputBoxes[box] = event
+
+	box.FocusLost:Connect(function(enterPressed)
+		if enterPressed then
+			box:CaptureFocus()
+		end
+	end)
+
+	return box, event
+end
