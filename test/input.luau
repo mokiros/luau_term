@@ -1,7 +1,9 @@
 local CAS = game:GetService("ContextActionService")
 local StarterGui = game:GetService("StarterGui")
 
-local event = script.Parent:WaitForChild("InputEvent") :: BindableEvent
+local event = Instance.new("BindableEvent")
+event.Name = "InputEvent"
+event.Parent = script
 
 local toggle = false
 
@@ -52,3 +54,5 @@ CAS:BindActionAtPriority(
 	Enum.ContextActionPriority.High.Value + 10,
 	Enum.UserInputType.Keyboard
 )
+
+return event
