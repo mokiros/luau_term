@@ -17,10 +17,6 @@ export type Canvas = {
 local Canvas = {}
 
 Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, fgColor: RGBA, bgColor: RGBA?): ()
-	if buffer.len(fgColor) ~= 4 or (bgColor and buffer.len(bgColor) ~= 4) then
-		error("Invalid colors: length must be 4")
-	end
-
 	local len = buffer.len(buf)
 	local cellHeight = canvas.cellSize * 2
 	if (len * 8) % cellHeight ~= 0 then
@@ -100,7 +96,7 @@ Canvas.fillLines = function(canvas: Canvas, startY: number, lineCount: number, c
 	local n = math.log(totalPixelLength, 2)
 	buffer.writeu32(buf, startOffset, color)
 	local count = 1
-	for i = 2, n do
+	for i = 1, n do
 		buffer.copy(buf, startOffset + count * 4, buf, startOffset, count * 4)
 		count *= 2
 	end
@@ -115,39 +111,98 @@ Canvas.fillScreen = function(canvas: Canvas, color: RGBA): ()
 	Canvas.fillLines(canvas, 0, canvas.height, color)
 end
 
-Canvas.fillBetween = function(canvas: Canvas, x1: number, y1: number, x2: number, y2: number, color: RGBA): ()
-	local w = canvas.width
-	local pos1 = x1 + y1 * w
-	local pos2 = x2 + y2 * w
-	if pos1 > pos2 then
-		pos1, pos2 = pos2, pos1
+--- Moves the canvas **DOWN**, adding lines on the top
+Canvas.shiftDown = function(canvas: Canvas, lines: number, topMargin: number, bottomMargin: number, color: RGBA): ()
+	local availableLines = canvas.height - topMargin - bottomMargin
+
+	if availableLines < 1 then
+		warn("Margins exceed canvas height, not shifting")
+		return
 	end
-	for pos = pos1, pos2 do
-		local x, y = pos % w, pos // w
-		Canvas.fillCell(canvas, x, y, color)
+
+	local clampedLines = math.clamp(lines, 1, availableLines)
+	local lineHeight = canvas.length / canvas.height
+	local startOffset = topMargin * lineHeight
+	local lineOffset = startOffset + clampedLines * lineHeight
+	local endOffset = (canvas.height - bottomMargin) * lineHeight
+
+	local buf = canvas.canvas
+	buffer.copy(buf, lineOffset, buf, startOffset, endOffset - lineOffset)
+
+	Canvas.fillLines(canvas, topMargin, clampedLines, color)
+end
+
+--- Moves the canvas **UP**, adding lines on the bottom
+Canvas.shiftUp = function(canvas: Canvas, lines: number, topMargin: number, bottomMargin: number, color: RGBA): ()
+	local availableLines = canvas.height - topMargin - bottomMargin
+	
+	if availableLines < 1 then
+		warn("Margins exceed canvas height, not shifting")
+		return
+	end
+	
+	local clampedLines = math.clamp(lines, 1, availableLines)
+	local lineHeight = canvas.length / canvas.height
+	local startOffset = topMargin * lineHeight
+	local lineOffset = startOffset + clampedLines * lineHeight
+	local endOffset = (canvas.height - bottomMargin) * lineHeight
+
+	local buf = canvas.canvas
+	buffer.copy(buf, startOffset, buf, lineOffset, endOffset - lineOffset)
+
+	Canvas.fillLines(canvas, canvas.height - bottomMargin - clampedLines, clampedLines, color)
+end
+
+Canvas.shiftRight = function(canvas: Canvas, y: number, startX: number, endX: number, emptyCellCount: number, bgColor: RGBA): ()
+	local width = endX - startX
+	local cellsToCopy = width - emptyCellCount
+
+	if cellsToCopy > 0 then
+		local cellHeight = canvas.cellSize * 2
+		local lineWidth = canvas.length / canvas.height
+		local lineOffset = lineWidth / cellHeight
+		local startOffset = lineWidth * y + startX * canvas.cellSize * 4
+		local buf = canvas.canvas
+		for line = 0, cellHeight do
+			buffer.copy(
+				buf,
+				startOffset + lineOffset * line + emptyCellCount * canvas.cellSize * 4,
+				buf,
+				startOffset + lineOffset * line,
+				cellsToCopy * canvas.cellSize * 4
+			)
+		end
+	end
+
+	for x = 0, emptyCellCount do
+		Canvas.fillCell(canvas, startX + x, y, bgColor)
 	end
 end
 
-Canvas.shiftDown = function(canvas: Canvas, lines: number, color: RGBA): ()
-	local clampedLines = math.clamp(lines, 1, canvas.height)
-	local lineHeight = canvas.length / canvas.height
-	local lineOffset = clampedLines * lineHeight
+Canvas.shiftLeft = function(canvas: Canvas, y: number, startX: number, endX: number, emptyCellCount: number, bgColor: RGBA): ()
+	local width = endX - startX
+	local cellsToCopy = width - emptyCellCount
 
-	local buf = canvas.canvas
-	buffer.copy(buf, lineOffset, buf, 0, canvas.length - lineOffset)
+	if cellsToCopy > 0 then
+		local cellHeight = canvas.cellSize * 2
+		local lineWidth = canvas.length / canvas.height
+		local lineOffset = lineWidth / cellHeight
+		local startOffset = lineWidth * y + startX * canvas.cellSize * 4
+		local buf = canvas.canvas
+		for line = 0, cellHeight do
+			buffer.copy(
+				buf,
+				startOffset + lineOffset * line,
+				buf,
+				startOffset + lineOffset * line + emptyCellCount * canvas.cellSize * 4,
+				cellsToCopy * canvas.cellSize * 4
+			)
+		end
+	end
 
-	Canvas.fillLines(canvas, 0, clampedLines, color)
-end
-
-Canvas.shiftUp = function(canvas: Canvas, lines: number, color: RGBA): ()
-	local clampedLines = math.clamp(lines, 1, canvas.height)
-	local lineHeight = canvas.length / canvas.height
-	local lineOffset = clampedLines * lineHeight
-
-	local buf = canvas.canvas
-	buffer.copy(buf, 0, buf, lineOffset, canvas.length - lineOffset)
-
-	Canvas.fillLines(canvas, canvas.height - clampedLines, clampedLines, color)
+	for x = 0, emptyCellCount do
+		Canvas.fillCell(canvas, endX - x, y, bgColor)
+	end
 end
 
 Canvas.createCanvas = function(w: number, h: number, cellSize: number?): Canvas
@@ -164,4 +219,4 @@ Canvas.createCanvas = function(w: number, h: number, cellSize: number?): Canvas
 	return canvas
 end
 
-return Canvas
+return table.freeze(Canvas)

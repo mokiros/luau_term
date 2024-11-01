@@ -1,5 +1,3 @@
-local canvas = require(script.Parent.canvas)
-
 local ParserState = table.freeze({
 	GROUND = 0,
 	ESCAPE = 1,
@@ -184,67 +182,11 @@ local C1 = table.freeze({
 	APC = 0x9f,
 })
 
-export type Params = {
-	_length: number,
-	_isSubParam: boolean,
-	params: { number },
-	subParams: { [number]: { number } },
-	[number]: never,
-}
-
-export type Parser = {
-	transitions: buffer,
-	initialState: number,
-	currentState: number,
-	collect: number,
-	precedingJoinState: number,
-	params: Params,
-	stringData: buffer,
-	stringDataLength: number,
-	oscState: number,
-	ident: number,
-}
-
-export type TerminalScreen = {
-	canvas: canvas.Canvas,
-	cursor: Vector2,
-	savedCursor: Vector2,
-}
-
-export type Terminal = {
-	currentScreen: TerminalScreen,
-	screens: {
-		normal: TerminalScreen,
-		alternate: TerminalScreen,
-	},
-	parser: Parser,
-	handlers: Handlers,
-	font: { buffer },
-	attributes: {
-		bold: boolean,
-		underline: boolean,
-		inverted: boolean,
-	},
-	theme: { canvas.RGBA },
-	fgColor: canvas.RGBA,
-	fgIndex: number,
-	bgColor: canvas.RGBA,
-	bgIndex: number,
-}
-
-export type Handlers = {
-	csi: { (term: Terminal, params: Params) -> () },
-	dcs: { (term: Terminal, data: buffer, dataLength: number, params: Params) -> () },
-	osc: { (term: Terminal, data: buffer, dataLength: number) -> () },
-	esc: { (term: Terminal) -> () },
-	exec: { (term: Terminal) -> () },
-	print: (term: Terminal, code: number) -> (),
-	error: (term: Terminal, code: number) -> (),
-}
-
 local DATA_LIMIT = 1024
 
 local NON_ASCII_PRINTABLE = 0xA0
+
+local DEFAULT_TAB_WIDTH = 8
 
 local TableAccess = table.freeze({
 	TRANSITION_ACTION_SHIFT = 4,
@@ -252,7 +194,47 @@ local TableAccess = table.freeze({
 	INDEX_STATE_SHIFT = 8,
 })
 
-return {
+-- Since buffers use little endian, the numbers have to be written in ABGR format
+local ANSI_COLORS = {
+	0xff_00_00_00, -- 0, 0, 0
+	0xff_00_00_bb, -- 187, 0, 0
+	0xff_00_bb_00, -- 0, 187, 0
+	0xff_00_bb_bb, -- 187, 187, 0
+	0xff_bb_00_00, -- 0, 0, 187
+	0xff_bb_00_bb, -- 187, 0, 187
+	0xff_bb_bb_00, -- 0, 187, 187
+	0xff_bb_bb_bb, -- 187, 187, 187
+
+	-- Bright colors
+	0xff_55_55_55, -- 85, 85, 85
+	0xff_55_55_ff, -- 255, 85, 85
+	0xff_55_ff_55, -- 85, 255, 85
+	0xff_55_ff_ff, -- 255, 255, 85
+	0xff_ff_55_55, -- 85, 85, 255
+	0xff_ff_55_ff, -- 255, 85, 255
+	0xff_ff_ff_55, -- 85, 255, 255
+	0xff_ff_ff_ff, -- 255, 255, 255
+}
+
+-- generate remaining 240 ANSI colors
+do
+	local v = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff }
+	for i = 0, 215 do
+		local r = v[(i // 36) % 6 + 1]
+		local g = v[(i // 6) % 6 + 1]
+		local b = v[i % 6 + 1]
+
+		ANSI_COLORS[i + 17] = 0xff_00_00_00 + b * 0x10000 + g * 0x100 + r
+	end
+
+	for i = 0, 23 do
+		local c = 8 + i * 10
+
+		ANSI_COLORS[i + 233] = 0xff_00_00_00 + c * 0x10000 + c * 0x100 + c
+	end
+end
+
+local Constants = table.freeze({
 	ParserState = ParserState,
 	ParserAction = ParserAction,
 	OscState = OscState,
@@ -261,4 +243,8 @@ return {
 	C0 = C0,
 	C1 = C1,
 	DCS_DATA_LIMIT = DATA_LIMIT,
-}
+	DEFAULT_TAB_WIDTH = DEFAULT_TAB_WIDTH,
+	ANSI_COLORS = ANSI_COLORS,
+})
+
+return Constants

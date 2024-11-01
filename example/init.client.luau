@@ -7,31 +7,9 @@ local font = script:WaitForChild("GetFont"):InvokeServer()
 local parseUnifont = require(script.unifont)
 local parsedFont = parseUnifont(font)
 
--- Since buffers use little endian, the numbers have to be written in ABGR format
-local colorTheme = {
-	0xff_00_00_00, -- 0, 0, 0
-	0xff_00_00_bb, -- 187, 0, 0
-	0xff_00_bb_00, -- 0, 187, 0
-	0xff_00_bb_bb, -- 187, 187, 0
-	0xff_bb_00_00, -- 0, 0, 187
-	0xff_bb_00_bb, -- 187, 0, 187
-	0xff_bb_bb_00, -- 0, 187, 187
-	0xff_bb_bb_bb, -- 187, 187, 187
-
-	-- Bright colors
-	0xff_55_55_55, -- 85, 85, 85
-	0xff_55_55_ff, -- 255, 85, 85
-	0xff_55_ff_55, -- 85, 255, 85
-	0xff_55_ff_ff, -- 255, 255, 85
-	0xff_ff_55_55, -- 85, 85, 255
-	0xff_ff_55_ff, -- 255, 85, 255
-	0xff_ff_ff_55, -- 85, 255, 255
-	0xff_ff_ff_ff, -- 255, 255, 255
-}
-
-local term = Terminal.createTerminal(128, 32, parsedFont, colorTheme)
+local term = Terminal.createTerminal(80, 30, parsedFont)
 local sessionid = newSession:InvokeServer(term.currentScreen.canvas.width, term.currentScreen.canvas.height, "xterm-256color")
-term.stdin = function(str)
+function term:stdin(str)
 	std:FireServer(sessionid, str)
 end
 
@@ -45,26 +23,41 @@ gui.ResetOnSpawn = false
 gui.Parent = PlayerGui
 local label = Instance.new("ImageLabel")
 label.AnchorPoint = Vector2.new(0.5, 0.5)
-label.Size = UDim2.fromOffset(pixelSize.X, pixelSize.Y)
+label.Size = UDim2.fromOffset(pixelSize.X - 2, pixelSize.Y - 2)
 label.Position = UDim2.fromScale(0.5, 0.5)
 label.ResampleMode = Enum.ResamplerMode.Pixelated
 label.Parent = gui
 
 local cursor = Instance.new("Frame")
-cursor.Size = UDim2.fromOffset(8, 16)
+cursor.Size = UDim2.fromOffset(6, 14)
+cursor.BackgroundTransparency = 1
 cursor.Parent = label
-local image = Instance.new("EditableImage")
-image.Parent = label
-image:Resize(pixelSize)
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 1
+stroke.Color = Color3.new(1, 1, 1)
+stroke.Parent = cursor
+
+local image = game:GetService("AssetService"):CreateEditableImage({
+	Size = pixelSize,
+})
+
+label.ImageContent = Content.fromObject(image)
+
+local function render()
+	image:WritePixelsBuffer(Vector2.zero, pixelSize, term.currentScreen.canvas.canvas)
+	cursor.Position = UDim2.fromOffset(term.currentScreen.cursor.X * 8 + 1, term.currentScreen.cursor.Y * 16 + 1)
+end
+
+render()
 
 std.OnClientEvent:Connect(function(id, str)
 	Terminal.stdout(term, str)
-	image:WritePixelsBuffer(Vector2.zero, pixelSize, term.currentScreen.canvas.canvas)
-	cursor.Position = UDim2.fromOffset(term.currentScreen.cursor.X * 8, term.currentScreen.cursor.Y * 16)
+	render()
 end)
 
 local createInput = require(script.input)
-local inputBox, inputEvent = createInput()
+local info = createInput()
+local inputBox = info.box
 
 inputBox.ZIndex = 999
 inputBox.Size = UDim2.fromScale(1, 1)
@@ -73,6 +66,14 @@ inputBox.TextTransparency = 1
 inputBox.TextSize = 0
 inputBox.Parent = label
 
-inputEvent.Event:Connect(function(str)
+function term:changeCursorKeyFormat(mode)
+	info.mode = mode
+end
+
+function term:changeCursorVisibility(visible)
+	cursor.Visible = visible
+end
+
+info.event.Event:Connect(function(str)
 	std:FireServer(sessionid, str)
 end)
