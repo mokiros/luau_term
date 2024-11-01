@@ -44,6 +44,17 @@ local function identifier(id: FunctionIdentifier, finalRange: { number }?): numb
 	return res
 end
 
-return {
+local function identifierToString(ident: number): string
+	local str = ""
+	while ident > 0 do
+		str = string.char(bit32.band(ident, 0xff)) .. str
+		ident = bit32.rshift(ident, 8)
+	end
+
+	return str
+end
+
+return table.freeze({
 	identifier = identifier,
-}
+	identifierToString = identifierToString,
+})

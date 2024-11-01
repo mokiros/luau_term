@@ -1,4 +1,5 @@
 local Constants = require(script.Parent.Constants)
+local Types = require(script.Parent.Types)
 local TransitionTable = require(script.TransitionTable)
 
 local ParserState = Constants.ParserState
@@ -11,21 +12,21 @@ local function add(a: number, b: number)
 	return bit32.bor(bit32.lshift(a, 8), b)
 end
 
-local function resetParams(params: Constants.Params)
+local function resetParams(params: Types.Params)
 	table.clear(params.params)
 	table.clear(params.subParams)
 	params._length = 0
 	params._isSubParam = false
 end
 
-local function addParam(params: Constants.Params)
+local function addParam(params: Types.Params)
 	local len = params._length + 1
 	params._isSubParam = false
 	params.params[len] = 0
 	params._length = len
 end
 
-local function addSubParam(params: Constants.Params)
+local function addSubParam(params: Types.Params)
 	local len = params._length
 	params._isSubParam = true
 	local t = params.subParams[len]
@@ -36,14 +37,14 @@ local function addSubParam(params: Constants.Params)
 	end
 end
 
-local function reset(parser: Constants.Parser)
+local function reset(parser: Types.Parser)
 	resetParams(parser.params)
 	parser.collect = 0
-	parser.precedingJoinState = 0
 	parser.stringDataLength = 0
+	parser.ident = 0
 end
 
-local function addDigit(params: Constants.Params, digit: number)
+local function addDigit(params: Types.Params, digit: number)
 	local len = params._length
 	if params._isSubParam then
 		local t = params.subParams[len]
@@ -62,14 +63,12 @@ local function addDigit(params: Constants.Params, digit: number)
 	end
 end
 
-local function parse(term: Constants.Terminal, code: number): ()
+local function parse(term: Types.Terminal, code: number): ()
 	local parser = term.parser
 	local handlers = term.handlers
-	local idx = bit32.bor(
-		bit32.lshift(parser.currentState, TableAccess.INDEX_STATE_SHIFT),
-		if code < 0xa0 then code else Constants.NON_ASCII_PRINTABLE
-	)
-	local transition = buffer.readu8(parser.transitions, idx)
+	local idx =
+		bit32.bor(bit32.lshift(parser.currentState, TableAccess.INDEX_STATE_SHIFT), math.min(code, Constants.NON_ASCII_PRINTABLE))
+	local transition = buffer.readu8(TransitionTable, idx)
 	local a = bit32.rshift(transition, TableAccess.TRANSITION_ACTION_SHIFT)
 	if a == ParserAction.PRINT then
 		handlers.print(term, code)
@@ -78,7 +77,7 @@ local function parse(term: Constants.Terminal, code: number): ()
 		if handler then
 			handler(term)
 		else
-			warn(`Unhandled EXECUTE command: {code}`)
+			handlers.execFallback(term, code)
 		end
 	elseif a == ParserAction.IGNORE then
 		-- ignore
@@ -90,11 +89,8 @@ local function parse(term: Constants.Terminal, code: number): ()
 		if handler then
 			handler(term, parser.params)
 		else
-			warn(
-				`Unhandled CSI command: {ident}, params: {parser.params._length}, \{{table.concat(parser.params.params, ", ")}\}`
-			)
+			handlers.csiFallback(term, ident, parser.params)
 		end
-		parser.precedingJoinState = 0
 	elseif a == ParserAction.PARAM then
 		-- digits (0x30 - 0x39) and ; (0x3b) and : (0x3a)
 		if code == 0x3b then
@@ -112,7 +108,7 @@ local function parse(term: Constants.Terminal, code: number): ()
 		if handler then
 			handler(term)
 		else
-			warn(`Unhandled ESC command: {ident}`)
+			handlers.escFallback(term, ident)
 		end
 	elseif a == ParserAction.CLEAR then
 		reset(parser)
@@ -131,7 +127,7 @@ local function parse(term: Constants.Terminal, code: number): ()
 			if handler then
 				handler(term, parser.stringData, parser.stringDataLength, parser.params)
 			else
-				warn(`Unhandled DCS command: {parser.ident}, params: {parser.params._length}, \{{table.concat(parser.params.params, ", ")}\}`)
+				handlers.dcsFallback(term, parser.ident, parser.stringData, parser.stringDataLength, parser.params)
 			end
 		end
 		if code == 0x1b then
@@ -160,21 +156,21 @@ local function parse(term: Constants.Terminal, code: number): ()
 			if handler then
 				handler(term, parser.stringData, parser.stringDataLength)
 			else
-				warn(`Unhandled OSC command: {parser.ident}`)
+				handlers.oscFallback(term, parser.ident, parser.stringData, parser.stringDataLength)
 			end
+		end
+		if code == 0x1b then
+			transition = bit32.bor(transition, ParserState.ESCAPE)
 		end
 		reset(parser)
 	end
 	parser.currentState = bit32.band(transition, TableAccess.TRANSITION_STATE_MASK)
 end
 
-local function createParser(): Constants.Parser
-	local parser: Constants.Parser = {
-		collect = 0,
-		precedingJoinState = 0,
+local function createParser(): Types.Parser
+	local parser: Types.Parser = {
 		currentState = 0,
-		initialState = 0,
-		transitions = TransitionTable,
+		collect = 0,
 		params = {
 			_isSubParam = false,
 			_length = 0,
@@ -183,8 +179,8 @@ local function createParser(): Constants.Parser
 		},
 		stringData = buffer.create(Constants.DCS_DATA_LIMIT),
 		stringDataLength = 0,
-		ident = 0,
 		oscState = OscState.START,
+		ident = 0,
 	}
 
 	reset(parser)
