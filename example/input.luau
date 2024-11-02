@@ -1,3 +1,9 @@
+-- Input handler, works by capturing inputs while the TextBox is focused
+-- It saves the last pressed key, then uses it when Enum.UserInputType.TextInput is emitted
+-- Using a TextBox allows us to capture all the keys that would otherwise be
+-- captured by CoreGui and ignored by ContextActionService, like slash or function keys,
+-- and when using TextInput if a key is held down, it will repeat
+
 local UIS = game:GetService("UserInputService")
 
 local inputBoxes: { [TextBox]: { box: TextBox, event: BindableEvent, mode: boolean } } = {}
@@ -25,8 +31,8 @@ do
 	--          A = 0b1000001
 	for code = Enum.KeyCode.A.Value, Enum.KeyCode.Z.Value do
 		InputMap[0b00][code] = code
-		InputMap[0b01][code] = bit32.bor(code, 0b1011111)
-		InputMap[0b10][code] = bit32.bor(code, 0b0011111)
+		InputMap[0b01][code] = bit32.band(code, 0b1011111)
+		InputMap[0b10][code] = bit32.band(code, 0b0011111)
 	end
 
 	-- Rest of the regular keys, hardcoded to not do crazy math
@@ -68,6 +74,7 @@ do
 	table.freeze(InputMap)
 end
 
+-- Keys below don't trigger TextInput
 local keysThatDontRepeat = {
 	[Enum.KeyCode.Backspace.Value] = true,
 	[Enum.KeyCode.Left.Value] = true,
@@ -90,11 +97,28 @@ local keysThatDontRepeat = {
 local lastKeyCode: Enum.KeyCode = Enum.KeyCode.Unknown
 
 local function handleInput(io: InputObject, handledByEngine: boolean)
+	-- We expect to be focused in a TextBox when handling input
 	if not handledByEngine then
 		return
 	end
 
-	if keysThatDontRepeat[io.KeyCode.Value] and io.UserInputState == Enum.UserInputState.Begin then
+	local focusedBox = UIS:GetFocusedTextBox()
+	local inputInfo = focusedBox and inputBoxes[focusedBox] or nil
+	if not inputInfo then
+		return
+	end
+
+	local ctrl = io:IsModifierKeyDown(Enum.ModifierKey.Ctrl)
+	if
+		-- Check for keys that don't emit TextInput
+		(keysThatDontRepeat[io.KeyCode.Value] and io.UserInputState == Enum.UserInputState.Begin)
+		or (
+			ctrl -- Edge case for when holding Ctrl, since it doesn't emit TextInput as well
+			and io.UserInputState == Enum.UserInputState.Begin
+			and io.UserInputType == Enum.UserInputType.Keyboard
+			and io.KeyCode ~= Enum.KeyCode.Unknown
+		)
+	then
 		lastKeyCode = io.KeyCode
 	else
 		if
@@ -102,6 +126,7 @@ local function handleInput(io: InputObject, handledByEngine: boolean)
 			and io.UserInputType == Enum.UserInputType.Keyboard
 			and io.KeyCode ~= Enum.KeyCode.Unknown
 		then
+			-- Save key to use when TextInput is emitted
 			lastKeyCode = io.KeyCode
 			return
 		elseif
@@ -109,16 +134,12 @@ local function handleInput(io: InputObject, handledByEngine: boolean)
 			or io.UserInputType ~= Enum.UserInputType.TextInput
 			or not lastKeyCode
 		then
+			-- Skip anything that is not TextInput
 			return
 		end
 	end
-	local focusedBox = UIS:GetFocusedTextBox()
-	local inputInfo = focusedBox and inputBoxes[focusedBox] or nil
-	if not inputInfo then
-		return
-	end
+
 	local shift = io:IsModifierKeyDown(Enum.ModifierKey.Shift)
-	local ctrl = io:IsModifierKeyDown(Enum.ModifierKey.Ctrl)
 	local alt = io:IsModifierKeyDown(Enum.ModifierKey.Alt)
 
 	local event = inputInfo.event
