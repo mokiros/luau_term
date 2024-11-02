@@ -69,6 +69,7 @@ local function createTerminal(width: number, height: number, bitmapFont: { buffe
 		bell = noop,
 		changeCursorKeyFormat = noop,
 		changeCursorVisibility = noop,
+		changeBracketedPasteMode = noop,
 	}
 
 	canvas.fillScreen(normalScreen.canvas, terminal.bgColor)

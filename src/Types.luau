@@ -74,6 +74,7 @@ export type Terminal = {
 	bell: (self: Terminal) -> (),
 	changeCursorKeyFormat: (self: Terminal, mode: boolean) -> (),
 	changeCursorVisibility: (self: Terminal, visible: boolean) -> (),
+	changeBracketedPasteMode: (self: Terminal, enable: boolean) -> (),
 }
 
 export type Handlers = {
