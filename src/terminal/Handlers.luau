@@ -396,6 +396,7 @@ Handlers.csi[fi({ prefix = "?", final = "h" })] = function(term, params)
 			term:changeCursorVisibility(true)
 		elseif v == 2004 then
 			term.decPrivateModes.bracketedPasteMode = true
+			term:changeBracketedPasteMode(true)
 		elseif v == 1048 or v == 1049 then
 			Util.saveCursor(term.currentScreen)
 		end
@@ -438,6 +439,7 @@ Handlers.csi[fi({ prefix = "?", final = "l" })] = function(term, params)
 			term:changeCursorVisibility(false)
 		elseif v == 2004 then
 			term.decPrivateModes.bracketedPasteMode = false
+			term:changeBracketedPasteMode(false)
 		elseif v == 1048 or v == 1049 then
 			Util.restoreCursor(term.currentScreen)
 		end

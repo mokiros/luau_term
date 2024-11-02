@@ -74,6 +74,10 @@ function term:changeCursorVisibility(visible)
 	cursor.Visible = visible
 end
 
+function term:changeBracketedPasteMode(enable)
+	info.bracketedPaste = enable
+end
+
 info.event.Event:Connect(function(str)
 	std:FireServer(sessionid, str)
 end)

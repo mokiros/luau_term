@@ -6,7 +6,7 @@
 
 local UIS = game:GetService("UserInputService")
 
-local inputBoxes: { [TextBox]: { box: TextBox, event: BindableEvent, mode: boolean } } = {}
+local inputBoxes: { [TextBox]: { box: TextBox, event: BindableEvent, mode: boolean, bracketedPaste: boolean } } = {}
 
 local InputMap: { [number]: { [number]: number | string } } = {
 	-- No modifier keys
@@ -107,6 +107,7 @@ local function handleInput(io: InputObject, handledByEngine: boolean)
 	if not inputInfo then
 		return
 	end
+	local event = inputInfo.event
 
 	local ctrl = io:IsModifierKeyDown(Enum.ModifierKey.Ctrl)
 	if
@@ -117,9 +118,12 @@ local function handleInput(io: InputObject, handledByEngine: boolean)
 			and io.UserInputState == Enum.UserInputState.Begin
 			and io.UserInputType == Enum.UserInputType.Keyboard
 			and io.KeyCode ~= Enum.KeyCode.Unknown
+			-- Except Ctrl + V, which does emit TextInput
+			and io.KeyCode ~= Enum.KeyCode.V
 		)
 	then
 		lastKeyCode = io.KeyCode
+		focusedBox.Text = ""
 	else
 		if
 			io.UserInputState == Enum.UserInputState.Begin
@@ -139,10 +143,21 @@ local function handleInput(io: InputObject, handledByEngine: boolean)
 		end
 	end
 
+	if ctrl and lastKeyCode == Enum.KeyCode.V then
+		task.delay(0, function()
+			local paste = focusedBox.Text
+			if inputInfo.bracketedPaste then
+				paste = "\x1b[200~" .. paste .. "\x1b[201~"
+			end
+			event:Fire(paste)
+			focusedBox.Text = ""
+		end)
+		return
+	end
+
 	local shift = io:IsModifierKeyDown(Enum.ModifierKey.Shift)
 	local alt = io:IsModifierKeyDown(Enum.ModifierKey.Alt)
 
-	local event = inputInfo.event
 	local code = lastKeyCode.Value
 
 	-- Special case for arrow keys
@@ -187,12 +202,10 @@ return function()
 		box = box,
 		event = event,
 		mode = false,
+		bracketedPaste = false,
 	}
 	inputBoxes[box] = info
 
-	box:GetPropertyChangedSignal("Text"):Connect(function()
-		box.Text = ""
-	end)
 	box.FocusLost:Connect(function(enterPressed)
 		if enterPressed then
 			box:CaptureFocus()
