@@ -32,7 +32,7 @@ end
 Util.shiftRight = function(term: Types.Terminal, amount: number)
 	local screen = term.currentScreen
 	Util.unsetWrapState(term)
-	canvas.shiftRight(screen.canvas, screen.cursor.Y, screen.cursor.X, screen.canvas.width, amount, Util.bgColor(term))
+	canvas.shiftRight(screen.canvas, screen.cursor.Y, screen.cursor.X, screen.canvas.width - 1, amount, Util.bgColor(term))
 end
 
 Util.setCursorPosition = function(term: Types.Terminal, x: number | nil, y: number | nil)
