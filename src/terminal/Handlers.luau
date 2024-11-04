@@ -83,7 +83,7 @@ end
 Handlers.oscFallback = function(term, ident, data, dataLength)
 	local b = buffer.create(dataLength)
 	buffer.copy(b, 0, data, 0, dataLength)
-	warn(`Unknown OSC code: {identifierToString(ident)}, data: {buffer.tostring(b)}`)
+	warn(`Unknown OSC code: {ident}, data: {buffer.tostring(b)}`)
 end
 Handlers.dcsFallback = function(term, ident, data, dataLength, params)
 	local b = buffer.create(dataLength)
