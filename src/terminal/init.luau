@@ -4,6 +4,8 @@ local Types = require(script.Parent.Types)
 local Handlers = require(script.Handlers)
 local Charsets = require(script.Parent.Charsets)
 local Constants = require(script.Parent.Constants)
+local parseUnifont = require(script.Parent.unifont)
+local UNIFONT_ASCII = require(script.Parent.UnifontAscii)
 
 local function noop() end
 
@@ -18,11 +20,12 @@ local function createScreen(width: number, height: number): Types.TerminalScreen
 	return screen
 end
 
-local function createTerminal(width: number, height: number, bitmapFont: { buffer }, theme: { canvas.RGBA }?): Types.Terminal
+local function createTerminal(width: number, height: number, bitmapFont: { buffer }?, theme: { canvas.RGBA }?): Types.Terminal
 	local normalScreen = createScreen(width, height)
 	local alternateScreen = createScreen(width, height)
 
 	local colors = theme or Constants.ANSI_COLORS
+	local font = bitmapFont or parseUnifont(UNIFONT_ASCII)
 
 	local terminal: Types.Terminal = {
 		currentScreen = normalScreen,
@@ -32,7 +35,7 @@ local function createTerminal(width: number, height: number, bitmapFont: { buffe
 		},
 		parser = parser.createParser(),
 		handlers = Handlers,
-		font = bitmapFont,
+		font = font,
 		charset = Charsets[0],
 		attributes = {
 			bold = false,

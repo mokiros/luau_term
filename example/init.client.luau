@@ -4,7 +4,7 @@ local std = script:WaitForChild("stdio") :: RemoteEvent
 local newSession = script:WaitForChild("NewSession") :: RemoteFunction
 
 local font = script:WaitForChild("GetFont"):InvokeServer()
-local parseUnifont = require(script.unifont)
+local parseUnifont = Terminal.parseUnifont
 local parsedFont = parseUnifont(font)
 
 local term = Terminal.createTerminal(80, 30, parsedFont)
