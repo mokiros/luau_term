@@ -9,3 +9,5 @@
 *.code-workspace
 
 sourcemap.json
+
+output.bmp
