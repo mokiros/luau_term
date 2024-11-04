@@ -642,8 +642,16 @@ Handlers.osc[4] = function(term, buf, len)
 	warn("FIXME: Program requested indexed color")
 end
 
+-- hyperlink
+Handlers.osc[8] = function(term, buf, len)
+	-- ignore it
+end
+
 ----------------
 -- ESC HANDLERS
+
+-- ESC \ -- ignore
+Handlers.esc[fiEsc({ final = "\\" })] = function() end
 
 -- ESC 7 - save cursor
 Handlers.esc[fiEsc({ final = "7" })] = function(term)
