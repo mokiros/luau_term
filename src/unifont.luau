@@ -13,7 +13,7 @@ local function parseUnifont(data: string)
 		-- Trimming unnecessary whitespace
 		line = trim(line)
 
-		if line == "" then
+		if line == "" or line:sub(1, 1) == "#" then
 			continue
 		end
 

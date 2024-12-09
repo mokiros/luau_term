@@ -1,0 +1,3 @@
+[submodule "tests/luau-path"]
+	path = tests/luau-path
+	url = https://github.com/seaofvoices/luau-path

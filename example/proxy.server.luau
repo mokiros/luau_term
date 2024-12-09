@@ -30,16 +30,32 @@ export type Session = {
 local sessions = {}
 
 local sessionThread = function(session)
+	local errCounter = 0
+
 	while true do
-		task.wait(1 / 10)
+		task.wait(1 / 8)
 		session.requesting = true
 		local input = session.inputBuffer
-		session.inputBuffer = ""
-		local data = HS:PostAsync(
+		local success, data = pcall(
+			HS.PostAsync,
+			HS,
 			string.format(endpoint_updateSession, session.id),
 			HS:JSONEncode({ body = input or "" }),
 			Enum.HttpContentType.ApplicationJson
 		)
+		if not success then
+			if data == "Number of requests exceeded limit" then
+				local waitTime = math.min(errCounter + 1, 10)
+				warn(`HTTP limit hit, waiting {waitTime} seconds`)
+				errCounter += 1
+				task.wait(waitTime)
+				continue
+			else
+				error(`Unknown error: {data}`)
+			end
+		end
+		errCounter = 0
+		session.inputBuffer = ""
 		if #data > 0 then
 			stdioEvent:FireClient(session.player, session.id, data)
 		end
