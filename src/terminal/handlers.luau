@@ -4,6 +4,8 @@ local Types = require("../types")
 local Util = require("./util")
 local Unicode = require("../unicode")
 
+local vector = require("../vector")
+
 local FunctionIdentifier = require("./function_identifier")
 local fi = FunctionIdentifier.identifier
 local identifierToString = FunctionIdentifier.identifierToString
@@ -74,7 +76,7 @@ Handlers.print = function(term, code)
 	if term.attributes.underline then
 		canvas.drawBitmap(screen.canvas, cursor.x, cursor.y, underlineGlyph, fgColor)
 	end
-	screen.cursor += vector.create(charWidth, 0, 0)
+	screen.cursor += vector(charWidth, 0, 0)
 	term.lastPrintedCodepoint = codepoint
 end
 
@@ -589,7 +591,7 @@ end
 
 Handlers.exec[C0.LF] = function(term)
 	if term.options.convertEol then
-		term.currentScreen.cursor = vector.create(0, term.currentScreen.cursor.y, 0)
+		term.currentScreen.cursor = vector(0, term.currentScreen.cursor.y, 0)
 	end
 	Util.cursorDownWithScroll(term)
 end
@@ -597,7 +599,7 @@ Handlers.exec[C0.VT] = Handlers.exec[C0.LF]
 Handlers.exec[C0.FF] = Handlers.exec[C0.LF]
 
 Handlers.exec[C0.CR] = function(term)
-	term.currentScreen.cursor = vector.create(0, term.currentScreen.cursor.y, 0)
+	term.currentScreen.cursor = vector(0, term.currentScreen.cursor.y, 0)
 end
 
 Handlers.exec[C0.BS] = function(term)
