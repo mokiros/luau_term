@@ -7,13 +7,15 @@ local Constants = require("../constants")
 local parseUnifont = require("../unifont")
 local UNIFONT_ASCII = require("../unifont_ascii")
 
+local vector = require('../vector')
+
 local function noop() end
 
 local function createScreen(width: number, height: number): Types.TerminalScreen
 	local screen: Types.TerminalScreen = {
 		canvas = canvas.createCanvas(width, height, 8),
-		cursor = vector.create(0, 0, 0),
-		savedCursor = vector.create(0, 0, 0),
+		cursor = vector(0, 0, 0),
+		savedCursor = vector(0, 0, 0),
 		tabs = table.create(width / Constants.DEFAULT_TAB_WIDTH),
 	}
 

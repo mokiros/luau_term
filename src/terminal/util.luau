@@ -2,6 +2,8 @@ local Types = require("../types")
 local canvas = require("../canvas")
 local Constants = require("../constants")
 
+local vector = require("../vector")
+
 local Util = {}
 
 Util.bgColor = function(term: Types.Terminal)
@@ -25,7 +27,7 @@ end
 Util.unsetWrapState = function(term: Types.Terminal)
 	local maxX = term.currentScreen.canvas.width
 	if term.currentScreen.cursor.x >= maxX then
-		term.currentScreen.cursor = vector.create(maxX - 1, term.currentScreen.cursor.y, 0)
+		term.currentScreen.cursor = vector(maxX - 1, term.currentScreen.cursor.y, 0)
 	end
 end
 
@@ -40,7 +42,7 @@ Util.setCursorPosition = function(term: Types.Terminal, x: number | nil, y: numb
 	local origin = term.decPrivateModes.origin
 	local mTop = origin and term.topMargin or 0
 	local mBottom = origin and term.bottomMargin or 0
-	screen.cursor = vector.create(
+	screen.cursor = vector(
 		x and math.clamp(x, 0, screen.canvas.width - 1) or screen.cursor.x,
 		y and math.clamp(y and y + mTop or screen.cursor.y, mTop, screen.canvas.height - mBottom - 1) or screen.cursor.y,
 		0
@@ -66,11 +68,11 @@ Util.cursorLeft = function(term: Types.Terminal, amount: number)
 	local screen = term.currentScreen
 	local cursor = screen.cursor
 	if not term.decPrivateModes.reverseWraparound or not term.decPrivateModes.wraparound then
-		screen.cursor = vector.create(math.max(0, cursor.x - amount), cursor.y, 0)
+		screen.cursor = vector(math.max(0, cursor.x - amount), cursor.y, 0)
 	else
 		local scroll = (cursor.x - amount) // screen.canvas.width
 		screen.cursor =
-			vector.create(math.max(0, cursor.x - amount) % screen.canvas.width, (cursor.y + scroll) % screen.canvas.height, 0)
+			vector(math.max(0, cursor.x - amount) % screen.canvas.width, (cursor.y + scroll) % screen.canvas.height, 0)
 	end
 	Util.unsetWrapState(term)
 end
@@ -78,7 +80,7 @@ end
 Util.cursorRight = function(term: Types.Terminal, amount: number)
 	local screen = term.currentScreen
 	local cursor = screen.cursor
-	screen.cursor = vector.create(math.min(screen.canvas.width - 1, cursor.x + amount), cursor.y, 0)
+	screen.cursor = vector(math.min(screen.canvas.width - 1, cursor.x + amount), cursor.y, 0)
 end
 
 Util.cursorDownWithScroll = function(term: Types.Terminal)
@@ -87,10 +89,10 @@ Util.cursorDownWithScroll = function(term: Types.Terminal)
 	if cursor.y + 1 == screen.canvas.height - term.bottomMargin then
 		Util.scrollUp(term, 1)
 	elseif cursor.y + 1 < screen.canvas.height then
-		cursor += vector.create(0, 1, 0)
+		cursor += vector(0, 1, 0)
 	end
 	if cursor.x >= screen.canvas.width then
-		cursor += vector.create(-1, 0, 0)
+		cursor += vector(-1, 0, 0)
 	end
 	screen.cursor = cursor
 end
@@ -101,10 +103,10 @@ Util.cursorUpWithScroll = function(term: Types.Terminal)
 	if cursor.y == term.topMargin then
 		Util.scrollDown(term, 1)
 	elseif cursor.y > 0 then
-		cursor += vector.create(0, -1, 0)
+		cursor += vector(0, -1, 0)
 	end
 	if cursor.x >= screen.canvas.width then
-		cursor += vector.create(-1, 0, 0)
+		cursor += vector(-1, 0, 0)
 	end
 	screen.cursor = cursor
 end
