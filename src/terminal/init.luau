@@ -12,8 +12,8 @@ local function noop() end
 local function createScreen(width: number, height: number): Types.TerminalScreen
 	local screen: Types.TerminalScreen = {
 		canvas = canvas.createCanvas(width, height, 8),
-		cursor = Vector2.new(0, 0),
-		savedCursor = Vector2.new(0, 0),
+		cursor = vector.create(0, 0, 0),
+		savedCursor = vector.create(0, 0, 0),
 		tabs = table.create(width / Constants.DEFAULT_TAB_WIDTH),
 	}
 
