@@ -8,9 +8,11 @@ local parseUnifont = require("./unifont")
 
 local UNIFONT_ASCII = require("./unifont_ascii")
 
-local function stdout(term: Types.Terminal, str: string): ()
-	for i, codepoint in utf8.codes(str) do
-		parser.parse(term, codepoint)
+local function stdout(term: Types.Terminal, buf: buffer, bytesToRead: number?): ()
+	local n = bytesToRead or buffer.len(buf)
+
+	for i = 0, n - 1 do
+		parser.parse(term, buffer.readu8(buf, i))
 	end
 end
 

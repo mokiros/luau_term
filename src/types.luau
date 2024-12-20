@@ -19,6 +19,7 @@ export type Parser = {
 	stringDataLength: number,
 	oscState: number,
 	ident: number,
+	joinState: number,
 }
 
 export type TerminalScreen = {

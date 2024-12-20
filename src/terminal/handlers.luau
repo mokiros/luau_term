@@ -27,6 +27,13 @@ local underlineGlyph = buffer.create(16)
 buffer.writeu8(underlineGlyph, 12, 0xFF)
 
 Handlers.print = function(term, code)
+	local shouldPrint, codepoint = Unicode.process(code, term.parser.joinState)
+	if not shouldPrint then
+		term.parser.joinState = codepoint
+		return
+	end
+	term.parser.joinState = 0
+
 	local fgColor = term.fgColor
 	local fgIndex = term.fgIndex
 	local bgColor = term.bgColor
@@ -39,10 +46,10 @@ Handlers.print = function(term, code)
 		fgColor = term.theme[(fgIndex % 8) + 8]
 	end
 	local charset = term.charset
-	if charset and charset[code] then
-		code = charset[code]
+	if charset and charset[codepoint] then
+		codepoint = charset[codepoint]
 	end
-	local bitmapGlyph = term.font[code] or term.font[0xFFFD] or error(`Unknown codepoint: {code}`)
+	local bitmapGlyph = term.font[codepoint] or term.font[0xFFFD] or error(`Unknown codepoint: {codepoint}`)
 	local screen = term.currentScreen
 	local charWidth = buffer.len(bitmapGlyph) / (screen.canvas.cellSize * 2)
 	if screen.cursor.x + charWidth > screen.canvas.width then
@@ -68,7 +75,7 @@ Handlers.print = function(term, code)
 		canvas.drawBitmap(screen.canvas, cursor.x, cursor.y, underlineGlyph, fgColor)
 	end
 	screen.cursor += vector.create(charWidth, 0, 0)
-	term.lastPrintedCodepoint = code
+	term.lastPrintedCodepoint = codepoint
 end
 
 Handlers.error = function(term) end
