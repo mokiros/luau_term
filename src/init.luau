@@ -1,13 +1,12 @@
-local Types = require(script.Types)
-local Terminal = require(script.terminal)
-local parser = require(script.parser)
-local Constants = require(script.Constants)
-local Canvas = require(script.canvas)
-local Util = require(script.terminal.Util)
-local parseUnifont = require(script.unifont)
+local Types = require("./types")
+local Terminal = require("./terminal")
+local parser = require("./parser")
+local Constants = require("./constants")
+local Canvas = require("./canvas")
+local Util = require("./terminal/util")
+local parseUnifont = require("./unifont")
 
-local UNIFONT_ASCII = require(script.UnifontAscii)
-
+local UNIFONT_ASCII = require("./unifont_ascii")
 
 local function stdout(term: Types.Terminal, str: string): ()
 	for i, codepoint in utf8.codes(str) do

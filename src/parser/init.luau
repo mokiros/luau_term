@@ -1,6 +1,6 @@
-local Constants = require(script.Parent.Constants)
-local Types = require(script.Parent.Types)
-local TransitionTable = require(script.TransitionTable)
+local Constants = require("../constants")
+local Types = require("../types")
+local TransitionTable = require("./transition_table")
 
 local ParserState = Constants.ParserState
 local ParserAction = Constants.ParserAction

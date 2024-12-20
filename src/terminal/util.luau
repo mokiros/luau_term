@@ -1,6 +1,6 @@
-local Types = require(script.Parent.Parent.Types)
-local canvas = require(script.Parent.Parent.canvas)
-local Constants = require(script.Parent.Parent.Constants)
+local Types = require("../types")
+local canvas = require("../canvas")
+local Constants = require("../constants")
 
 local Util = {}
 
