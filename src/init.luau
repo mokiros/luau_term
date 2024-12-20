@@ -16,6 +16,8 @@ local function stdout(term: Types.Terminal, buf: buffer, bytesToRead: number?): 
 	end
 end
 
+export type Terminal = Types.Terminal
+
 return {
 	stdout = stdout,
 	createTerminal = Terminal.createTerminal,
