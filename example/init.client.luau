@@ -3,7 +3,7 @@ local Terminal = require(script.luau_term)
 local std = script:WaitForChild("stdio") :: RemoteEvent
 local newSession = script:WaitForChild("NewSession") :: RemoteFunction
 
-local font = script:WaitForChild("GetFont"):InvokeServer()
+local font = (script:WaitForChild("GetFont") :: RemoteFunction):InvokeServer()
 local parseUnifont = Terminal.parseUnifont
 local parsedFont = parseUnifont(font)
 
@@ -45,7 +45,7 @@ label.ImageContent = Content.fromObject(image)
 
 local function render()
 	image:WritePixelsBuffer(Vector2.zero, pixelSize, term.currentScreen.canvas.canvas)
-	cursor.Position = UDim2.fromOffset(term.currentScreen.cursor.X * 8 + 1, term.currentScreen.cursor.Y * 16 + 1)
+	cursor.Position = UDim2.fromOffset(term.currentScreen.cursor.x * 8 + 1, term.currentScreen.cursor.y * 16 + 1)
 end
 
 render()
