@@ -1,6 +1,5 @@
 local fs = require("@lune/fs")
 local net = require("@lune/net")
-local loadScript = require("./loader.luau")
 local encodeBMP = require("./bmp.luau")
 
 print("Downloading font...")
@@ -13,7 +12,7 @@ local response = net.request({
 assert(response.ok, "Failed to download font")
 
 print("Loading source files...")
-local Terminal = loadScript("../src/init.luau")
+local Terminal = require("../src/init.luau")
 
 local font = Terminal.parseUnifont(response.body)
 
@@ -21,7 +20,7 @@ local width, height = 10, 4
 local term = Terminal.createTerminal(width, height, font)
 
 print("Sending stdout...")
-Terminal.stdout(term, "test")
+Terminal.stdout(term, buffer.fromstring("test"))
 
 print("Saving image...")
 local bmpBuffer = encodeBMP(term.currentScreen.canvas.canvas, width * 8, height * 16)
