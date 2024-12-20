@@ -45,9 +45,9 @@ Handlers.print = function(term, code)
 	local bitmapGlyph = term.font[code] or term.font[0xFFFD] or error(`Unknown codepoint: {code}`)
 	local screen = term.currentScreen
 	local charWidth = buffer.len(bitmapGlyph) / (screen.canvas.cellSize * 2)
-	if screen.cursor.X + charWidth > screen.canvas.width then
+	if screen.cursor.x + charWidth > screen.canvas.width then
 		if term.decPrivateModes.wraparound then
-			local nextY = screen.cursor.Y + 1
+			local nextY = screen.cursor.y + 1
 			if nextY == (screen.canvas.height - term.bottomMargin) then
 				nextY -= 1
 				Util.scrollUp(term, 1)
@@ -63,11 +63,11 @@ Handlers.print = function(term, code)
 	if term.modes.insert then
 		Util.shiftRight(term, charWidth)
 	end
-	canvas.drawBitmap(screen.canvas, cursor.X, cursor.Y, bitmapGlyph, fgColor, bgColor)
+	canvas.drawBitmap(screen.canvas, cursor.x, cursor.y, bitmapGlyph, fgColor, bgColor)
 	if term.attributes.underline then
-		canvas.drawBitmap(screen.canvas, cursor.X, cursor.Y, underlineGlyph, fgColor)
+		canvas.drawBitmap(screen.canvas, cursor.x, cursor.y, underlineGlyph, fgColor)
 	end
-	screen.cursor += Vector2.new(charWidth, 0)
+	screen.cursor += vector.create(charWidth, 0, 0)
 	term.lastPrintedCodepoint = code
 end
 
@@ -158,7 +158,7 @@ end
 Handlers.csi[fi({ final = "I" })] = function(term, params)
 	local screen = term.currentScreen
 
-	if screen.cursor.X >= screen.canvas.width then
+	if screen.cursor.x >= screen.canvas.width then
 		return
 	end
 
@@ -176,20 +176,20 @@ Handlers.csi[fi({ final = "J" })] = function(term, params)
 	Util.unsetWrapState(term)
 
 	if mode == 0 then
-		for x = screen.cursor.X, screen.canvas.width - 1 do
-			canvas.fillCell(screen.canvas, x, screen.cursor.Y, Util.bgColor(term))
+		for x = screen.cursor.x, screen.canvas.width - 1 do
+			canvas.fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
 		end
-		local lines = screen.canvas.height - screen.cursor.Y - 1
+		local lines = screen.canvas.height - screen.cursor.y - 1
 		if lines > 0 then
-			canvas.fillLines(screen.canvas, screen.cursor.Y + 1, lines, Util.bgColor(term))
+			canvas.fillLines(screen.canvas, screen.cursor.y + 1, lines, Util.bgColor(term))
 		end
 	elseif mode == 1 then
-		local lines = screen.cursor.Y - 1
+		local lines = screen.cursor.y - 1
 		if lines > 0 then
 			canvas.fillLines(screen.canvas, 0, lines, Util.bgColor(term))
 		end
-		for x = 0, screen.cursor.X do
-			canvas.fillCell(screen.canvas, x, screen.cursor.Y, Util.bgColor(term))
+		for x = 0, screen.cursor.x do
+			canvas.fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
 		end
 	elseif mode == 2 or mode == 3 then
 		canvas.fillScreen(screen.canvas, Util.bgColor(term))
@@ -207,15 +207,15 @@ Handlers.csi[fi({ final = "K" })] = function(term, params)
 	Util.unsetWrapState(term)
 
 	if mode == 0 then
-		for x = screen.cursor.X, screen.canvas.width - 1 do
-			canvas.fillCell(screen.canvas, x, screen.cursor.Y, Util.bgColor(term))
+		for x = screen.cursor.x, screen.canvas.width - 1 do
+			canvas.fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
 		end
 	elseif mode == 1 then
-		for x = 0, screen.cursor.X do
-			canvas.fillCell(screen.canvas, x, screen.cursor.Y, Util.bgColor(term))
+		for x = 0, screen.cursor.x do
+			canvas.fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
 		end
 	elseif mode == 2 then
-		canvas.fillLines(screen.canvas, screen.cursor.Y, 1, Util.bgColor(term))
+		canvas.fillLines(screen.canvas, screen.cursor.y, 1, Util.bgColor(term))
 	end
 end
 
@@ -228,11 +228,11 @@ Handlers.csi[fi({ final = "L" })] = function(term, params)
 	local amount = params.params[1] or 1
 	Util.unsetWrapState(term)
 
-	if screen.cursor.Y < term.topMargin or screen.cursor.Y > term.bottomMargin then
+	if screen.cursor.y < term.topMargin or screen.cursor.y > term.bottomMargin then
 		return
 	end
 
-	canvas.shiftDown(screen.canvas, amount, screen.cursor.Y, term.bottomMargin, Util.bgColor(term))
+	canvas.shiftDown(screen.canvas, amount, screen.cursor.y, term.bottomMargin, Util.bgColor(term))
 	Util.setCursorPosition(term, 0, nil)
 end
 
@@ -242,11 +242,11 @@ Handlers.csi[fi({ final = "M" })] = function(term, params)
 	local amount = params.params[1] or 1
 	Util.unsetWrapState(term)
 
-	if screen.cursor.Y < term.topMargin or screen.cursor.Y > term.bottomMargin then
+	if screen.cursor.y < term.topMargin or screen.cursor.y > term.bottomMargin then
 		return
 	end
 
-	canvas.shiftUp(screen.canvas, amount, screen.cursor.Y, term.bottomMargin, Util.bgColor(term))
+	canvas.shiftUp(screen.canvas, amount, screen.cursor.y, term.bottomMargin, Util.bgColor(term))
 	Util.setCursorPosition(term, 0, nil)
 end
 
@@ -255,7 +255,7 @@ Handlers.csi[fi({ final = "P" })] = function(term, params)
 	local screen = term.currentScreen
 	local amount = params.params[1] or 1
 	Util.unsetWrapState(term)
-	canvas.shiftLeft(screen.canvas, screen.cursor.Y, screen.cursor.X, screen.canvas.width - 1, amount, Util.bgColor(term))
+	canvas.shiftLeft(screen.canvas, screen.cursor.y, screen.cursor.x, screen.canvas.width - 1, amount, Util.bgColor(term))
 end
 
 -- ESC [ n S - scroll up
@@ -274,10 +274,10 @@ end
 Handlers.csi[fi({ final = "X" })] = function(term, params)
 	local screen = term.currentScreen
 	local amount = params.params[1] or 1
-	local endX = math.min(screen.cursor.X + amount - 1, screen.canvas.width - 1)
+	local endX = math.min(screen.cursor.x + amount - 1, screen.canvas.width - 1)
 	Util.unsetWrapState(term)
-	for x = screen.cursor.X, endX do
-		canvas.fillCell(screen.canvas, x, screen.cursor.Y, Util.bgColor(term))
+	for x = screen.cursor.x, endX do
+		canvas.fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
 	end
 end
 
@@ -285,7 +285,7 @@ end
 Handlers.csi[fi({ final = "Z" })] = function(term, params)
 	local screen = term.currentScreen
 
-	if screen.cursor.X <= 0 then
+	if screen.cursor.x <= 0 then
 		return
 	end
 
@@ -353,7 +353,7 @@ Handlers.csi[fi({ final = "g" })] = function(term, params)
 	local screen = term.currentScreen
 	local mode = params.params[1] or 0
 	if mode == 0 then
-		local x = screen.cursor.X
+		local x = screen.cursor.x
 		for i, v in term.currentScreen.tabs do
 			if v == x then
 				table.remove(term.currentScreen.tabs, i)
@@ -582,7 +582,7 @@ end
 
 Handlers.exec[C0.LF] = function(term)
 	if term.options.convertEol then
-		term.currentScreen.cursor = Vector2.new(0, term.currentScreen.cursor.Y)
+		term.currentScreen.cursor = vector.create(0, term.currentScreen.cursor.y, 0)
 	end
 	Util.cursorDownWithScroll(term)
 end
@@ -590,7 +590,7 @@ Handlers.exec[C0.VT] = Handlers.exec[C0.LF]
 Handlers.exec[C0.FF] = Handlers.exec[C0.LF]
 
 Handlers.exec[C0.CR] = function(term)
-	term.currentScreen.cursor = Vector2.new(0, term.currentScreen.cursor.Y)
+	term.currentScreen.cursor = vector.create(0, term.currentScreen.cursor.y, 0)
 end
 
 Handlers.exec[C0.BS] = function(term)

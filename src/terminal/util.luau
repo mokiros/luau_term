@@ -24,15 +24,15 @@ end
 
 Util.unsetWrapState = function(term: Types.Terminal)
 	local maxX = term.currentScreen.canvas.width
-	if term.currentScreen.cursor.X >= maxX then
-		term.currentScreen.cursor = Vector2.new(maxX - 1, term.currentScreen.cursor.Y)
+	if term.currentScreen.cursor.x >= maxX then
+		term.currentScreen.cursor = vector.create(maxX - 1, term.currentScreen.cursor.y, 0)
 	end
 end
 
 Util.shiftRight = function(term: Types.Terminal, amount: number)
 	local screen = term.currentScreen
 	Util.unsetWrapState(term)
-	canvas.shiftRight(screen.canvas, screen.cursor.Y, screen.cursor.X, screen.canvas.width - 1, amount, Util.bgColor(term))
+	canvas.shiftRight(screen.canvas, screen.cursor.y, screen.cursor.x, screen.canvas.width - 1, amount, Util.bgColor(term))
 end
 
 Util.setCursorPosition = function(term: Types.Terminal, x: number | nil, y: number | nil)
@@ -40,24 +40,25 @@ Util.setCursorPosition = function(term: Types.Terminal, x: number | nil, y: numb
 	local origin = term.decPrivateModes.origin
 	local mTop = origin and term.topMargin or 0
 	local mBottom = origin and term.bottomMargin or 0
-	screen.cursor = Vector2.new(
-		x and math.clamp(x, 0, screen.canvas.width - 1) or screen.cursor.X,
-		y and math.clamp(y and y + mTop or screen.cursor.Y, mTop, screen.canvas.height - mBottom - 1) or screen.cursor.Y
+	screen.cursor = vector.create(
+		x and math.clamp(x, 0, screen.canvas.width - 1) or screen.cursor.x,
+		y and math.clamp(y and y + mTop or screen.cursor.y, mTop, screen.canvas.height - mBottom - 1) or screen.cursor.y,
+		0
 	)
 end
 
 Util.moveCursor = function(term: Types.Terminal, x: number, y: number)
 	local screen = term.currentScreen
-	Util.setCursorPosition(term, x ~= 0 and screen.cursor.X + x or nil, y ~= 0 and screen.cursor.Y + y or nil)
+	Util.setCursorPosition(term, x ~= 0 and screen.cursor.x + x or nil, y ~= 0 and screen.cursor.y + y or nil)
 end
 
 Util.cursorUp = function(term: Types.Terminal, amount: number)
-	local diffToTop = term.currentScreen.cursor.Y - term.topMargin
+	local diffToTop = term.currentScreen.cursor.y - term.topMargin
 	Util.moveCursor(term, 0, diffToTop >= 0 and -math.min(diffToTop, amount) or -amount)
 end
 
 Util.cursorDown = function(term: Types.Terminal, amount: number)
-	local diffToBottom = term.currentScreen.canvas.height - term.bottomMargin - 1 - term.currentScreen.cursor.Y
+	local diffToBottom = term.currentScreen.canvas.height - term.bottomMargin - 1 - term.currentScreen.cursor.y
 	Util.moveCursor(term, 0, diffToBottom >= 0 and -math.min(diffToBottom, amount) or -amount)
 end
 
@@ -65,11 +66,11 @@ Util.cursorLeft = function(term: Types.Terminal, amount: number)
 	local screen = term.currentScreen
 	local cursor = screen.cursor
 	if not term.decPrivateModes.reverseWraparound or not term.decPrivateModes.wraparound then
-		screen.cursor = Vector2.new(math.max(0, cursor.X - amount), cursor.Y)
+		screen.cursor = vector.create(math.max(0, cursor.x - amount), cursor.y, 0)
 	else
-		local scroll = (cursor.X - amount) // screen.canvas.width
+		local scroll = (cursor.x - amount) // screen.canvas.width
 		screen.cursor =
-			Vector2.new(math.max(0, cursor.X - amount) % screen.canvas.width, (cursor.Y + scroll) % screen.canvas.height)
+			vector.create(math.max(0, cursor.x - amount) % screen.canvas.width, (cursor.y + scroll) % screen.canvas.height, 0)
 	end
 	Util.unsetWrapState(term)
 end
@@ -77,19 +78,19 @@ end
 Util.cursorRight = function(term: Types.Terminal, amount: number)
 	local screen = term.currentScreen
 	local cursor = screen.cursor
-	screen.cursor = Vector2.new(math.min(screen.canvas.width - 1, cursor.X + amount), cursor.Y)
+	screen.cursor = vector.create(math.min(screen.canvas.width - 1, cursor.x + amount), cursor.y, 0)
 end
 
 Util.cursorDownWithScroll = function(term: Types.Terminal)
 	local screen = term.currentScreen
 	local cursor = screen.cursor
-	if cursor.Y + 1 == screen.canvas.height - term.bottomMargin then
+	if cursor.y + 1 == screen.canvas.height - term.bottomMargin then
 		Util.scrollUp(term, 1)
-	elseif cursor.Y + 1 < screen.canvas.height then
-		cursor += Vector2.new(0, 1)
+	elseif cursor.y + 1 < screen.canvas.height then
+		cursor += vector.create(0, 1, 0)
 	end
-	if cursor.X >= screen.canvas.width then
-		cursor += Vector2.new(-1, 0)
+	if cursor.x >= screen.canvas.width then
+		cursor += vector.create(-1, 0, 0)
 	end
 	screen.cursor = cursor
 end
@@ -97,13 +98,13 @@ end
 Util.cursorUpWithScroll = function(term: Types.Terminal)
 	local screen = term.currentScreen
 	local cursor = screen.cursor
-	if cursor.Y == term.topMargin then
+	if cursor.y == term.topMargin then
 		Util.scrollDown(term, 1)
-	elseif cursor.Y > 0 then
-		cursor += Vector2.new(0, -1)
+	elseif cursor.y > 0 then
+		cursor += vector.create(0, -1, 0)
 	end
-	if cursor.X >= screen.canvas.width then
-		cursor += Vector2.new(-1, 0)
+	if cursor.x >= screen.canvas.width then
+		cursor += vector.create(-1, 0, 0)
 	end
 	screen.cursor = cursor
 end
@@ -124,7 +125,7 @@ Util.resetTabs = function(screen: Types.TerminalScreen)
 end
 
 Util.insertTab = function(screen: Types.TerminalScreen, pos: number?)
-	local x = pos or screen.cursor.X
+	local x = pos or screen.cursor.x
 	for i, v in screen.tabs do
 		if v > x then
 			table.insert(screen.tabs, i, x)
@@ -136,7 +137,7 @@ Util.insertTab = function(screen: Types.TerminalScreen, pos: number?)
 end
 
 Util.getNextTab = function(screen: Types.TerminalScreen, pos: number?): number
-	local x = pos or screen.cursor.X
+	local x = pos or screen.cursor.x
 	for i, v in screen.tabs do
 		if v > x then
 			return v
@@ -146,7 +147,7 @@ Util.getNextTab = function(screen: Types.TerminalScreen, pos: number?): number
 end
 
 Util.getPreviousTab = function(screen: Types.TerminalScreen, pos: number?): number
-	local x = pos or screen.cursor.X
+	local x = pos or screen.cursor.x
 	for i, v in screen.tabs do
 		if v >= x then
 			return screen.tabs[i - 1] or 0

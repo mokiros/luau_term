@@ -1,7 +1,7 @@
 local canvas = require("./canvas")
 local Charsets = require("./charsets")
 
-export type Cursor = Vector2
+export type Cursor = vector
 
 export type Params = {
 	_length: number,
