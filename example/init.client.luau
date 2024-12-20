@@ -51,7 +51,7 @@ end
 render()
 
 std.OnClientEvent:Connect(function(id, str)
-	Terminal.stdout(term, str)
+	Terminal.stdout(term, buffer.fromstring(str))
 	render()
 end)
 

@@ -42,6 +42,7 @@ local function reset(parser: Types.Parser)
 	parser.collect = 0
 	parser.stringDataLength = 0
 	parser.ident = 0
+	parser.joinState = 0
 end
 
 local function addDigit(params: Types.Params, digit: number)
@@ -79,6 +80,7 @@ local function parse(term: Types.Terminal, code: number): ()
 		else
 			handlers.execFallback(term, code)
 		end
+		parser.joinState = 0
 	elseif a == ParserAction.IGNORE then
 		-- ignore
 	elseif a == ParserAction.ERROR then
@@ -91,6 +93,7 @@ local function parse(term: Types.Terminal, code: number): ()
 		else
 			handlers.csiFallback(term, ident, parser.params)
 		end
+		parser.joinState = 0
 	elseif a == ParserAction.PARAM then
 		-- digits (0x30 - 0x39) and ; (0x3b) and : (0x3a)
 		if code == 0x3b then
@@ -110,6 +113,7 @@ local function parse(term: Types.Terminal, code: number): ()
 		else
 			handlers.escFallback(term, ident)
 		end
+		parser.joinState = 0
 	elseif a == ParserAction.CLEAR then
 		reset(parser)
 	elseif a == ParserAction.DCS_HOOK then
@@ -181,6 +185,7 @@ local function createParser(): Types.Parser
 		stringDataLength = 0,
 		oscState = OscState.START,
 		ident = 0,
+		joinState = 0,
 	}
 
 	reset(parser)
