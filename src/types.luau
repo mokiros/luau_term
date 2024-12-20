@@ -1,5 +1,5 @@
-local canvas = require(script.Parent.canvas)
-local Charsets = require(script.Parent.Charsets)
+local canvas = require("./canvas")
+local Charsets = require("./charsets")
 
 export type Cursor = Vector2
 

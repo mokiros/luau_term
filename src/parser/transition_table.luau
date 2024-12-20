@@ -1,4 +1,4 @@
-local Constants = require(script.Parent.Parent.Constants)
+local Constants = require("../constants")
 
 local ParserState = Constants.ParserState
 local ParserAction = Constants.ParserAction

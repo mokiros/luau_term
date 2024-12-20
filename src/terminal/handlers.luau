@@ -1,9 +1,10 @@
-local canvas = require(script.Parent.Parent.canvas)
-local Constants = require(script.Parent.Parent.Constants)
-local Types = require(script.Parent.Parent.Types)
-local Util = require(script.Parent.Util)
+local canvas = require("../canvas")
+local Constants = require("../constants")
+local Types = require("../types")
+local Util = require("./util")
+local Unicode = require("../unicode")
 
-local FunctionIdentifier = require(script.Parent.Parent.parser.FunctionIdentifier)
+local FunctionIdentifier = require("./function_identifier")
 local fi = FunctionIdentifier.identifier
 local identifierToString = FunctionIdentifier.identifierToString
 local C0, C1 = Constants.C0, Constants.C1
