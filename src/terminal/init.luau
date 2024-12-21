@@ -1,19 +1,21 @@
-local parser = require(script.Parent.parser)
-local canvas = require(script.Parent.canvas)
-local Types = require(script.Parent.Types)
-local Handlers = require(script.Handlers)
-local Charsets = require(script.Parent.Charsets)
-local Constants = require(script.Parent.Constants)
-local parseUnifont = require(script.Parent.unifont)
-local UNIFONT_ASCII = require(script.Parent.UnifontAscii)
+local parser = require("../parser")
+local canvas = require("../canvas")
+local Types = require("../types")
+local Handlers = require("./handlers")
+local Charsets = require("../charsets")
+local Constants = require("../constants")
+local parseUnifont = require("../unifont")
+local UNIFONT_ASCII = require("../unifont_ascii")
+
+local vector = require('../vector')
 
 local function noop() end
 
 local function createScreen(width: number, height: number): Types.TerminalScreen
 	local screen: Types.TerminalScreen = {
 		canvas = canvas.createCanvas(width, height, 8),
-		cursor = Vector2.new(0, 0),
-		savedCursor = Vector2.new(0, 0),
+		cursor = vector(0, 0, 0),
+		savedCursor = vector(0, 0, 0),
 		tabs = table.create(width / Constants.DEFAULT_TAB_WIDTH),
 	}
 
