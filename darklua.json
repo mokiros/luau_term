@@ -1,0 +1,14 @@
+{
+	"rules": [
+		{
+			"rule": "convert_require",
+			"current": {
+				"name": "path",
+			},
+			"target": {
+				"name": "roblox",
+				"indexing_style": "property",
+			},
+		}
+	],
+}

@@ -7,7 +7,7 @@
 			"test": {
 				"$path": "example",
 				"luau_term": {
-					"$path": "src"
+					"$path": "out"
 				}
 			}
 		},

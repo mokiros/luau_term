@@ -13,3 +13,6 @@ sourcemap.json
 # Output of test runners
 output.bmp
 unifont-*.hex
+
+# darklua output
+/out
