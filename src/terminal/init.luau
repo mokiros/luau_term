@@ -1,5 +1,5 @@
 local parser = require("../parser")
-local canvas = require("../canvas")
+local Canvas = require("../canvas")
 local Types = require("../types")
 local Handlers = require("./handlers")
 local Charsets = require("../charsets")
@@ -11,9 +11,9 @@ local vector = require('../vector')
 
 local function noop() end
 
-local function createScreen(width: number, height: number): Types.TerminalScreen
+local function createScreen(canvasType: Canvas.CanvasType, width: number, height: number): Types.TerminalScreen
 	local screen: Types.TerminalScreen = {
-		canvas = canvas.createCanvas(width, height, 8),
+		canvas = Canvas[canvasType].createCanvas(width, height, 8),
 		cursor = vector(0, 0, 0),
 		savedCursor = vector(0, 0, 0),
 		tabs = table.create(width / Constants.DEFAULT_TAB_WIDTH),
@@ -22,14 +22,15 @@ local function createScreen(width: number, height: number): Types.TerminalScreen
 	return screen
 end
 
-local function createTerminal(width: number, height: number, bitmapFont: { buffer }?, theme: { canvas.RGBA }?): Types.Terminal
-	local normalScreen = createScreen(width, height)
-	local alternateScreen = createScreen(width, height)
+local function createTerminal(canvasType: Canvas.CanvasType, width: number, height: number, bitmapFont: { buffer }?, theme: { Canvas.RGBA }?): Types.Terminal
+	local normalScreen = createScreen(canvasType, width, height)
+	local alternateScreen = createScreen(canvasType, width, height)
 
 	local colors = theme or Constants.ANSI_COLORS
 	local font = bitmapFont or parseUnifont(UNIFONT_ASCII)
 
 	local terminal: Types.Terminal = {
+		canvasType = canvasType,
 		currentScreen = normalScreen,
 		screens = {
 			normal = normalScreen,
@@ -41,6 +42,7 @@ local function createTerminal(width: number, height: number, bitmapFont: { buffe
 		charset = Charsets[0],
 		attributes = {
 			bold = false,
+			italic = false,
 			underline = false,
 			inverted = false,
 		},
@@ -77,8 +79,8 @@ local function createTerminal(width: number, height: number, bitmapFont: { buffe
 		changeBracketedPasteMode = noop,
 	}
 
-	canvas.fillScreen(normalScreen.canvas, terminal.bgColor)
-	canvas.fillScreen(alternateScreen.canvas, terminal.bgColor)
+	Canvas[canvasType].fillScreen(normalScreen.canvas, terminal.bgColor)
+	Canvas[canvasType].fillScreen(alternateScreen.canvas, terminal.bgColor)
 
 	return terminal
 end

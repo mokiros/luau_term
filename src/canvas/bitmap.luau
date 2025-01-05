@@ -2,21 +2,16 @@
 --!native
 --!strict
 
-export type RGBACanvas = buffer
+local Types = require('./types')
 
-export type RGBA = number
+type BitmapCanvas = buffer
 
-export type Canvas = {
-	canvas: RGBACanvas,
-	length: number,
-	width: number,
-	height: number,
-	cellSize: number,
-}
+local BitmapCanvas = {} :: Types.CanvasModule<BitmapCanvas, buffer>
 
-local Canvas = {}
+local underlineGlyph = buffer.create(16)
+buffer.writeu8(underlineGlyph, 12, 0xFF)
 
-Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, fgColor: RGBA, bgColor: RGBA?): ()
+BitmapCanvas.draw = function(canvas, x, y, buf, att, fgColor, bgColor)
 	local len = buffer.len(buf)
 	local cellHeight = canvas.cellSize * 2
 	if (len * 8) % cellHeight ~= 0 then
@@ -66,9 +61,13 @@ Canvas.drawBitmap = function(canvas: Canvas, x: number, y: number, buf: buffer, 
 			end
 		end
 	end
+
+	if att.underline then
+		BitmapCanvas.draw(canvas, x, y, underlineGlyph, {} :: any, fgColor)
+	end
 end
 
-Canvas.fillCell = function(canvas: Canvas, x: number, y: number, color: RGBA): ()
+BitmapCanvas.fillCell = function(canvas, x, y, color)
 	local buf = canvas.canvas
 	local pixelOffsetX = x * canvas.cellSize
 	local pixelOffsetY = y * canvas.cellSize * 2
@@ -84,7 +83,7 @@ Canvas.fillCell = function(canvas: Canvas, x: number, y: number, color: RGBA): (
 	end
 end
 
-Canvas.fillLines = function(canvas: Canvas, startY: number, lineCount: number, color: RGBA): ()
+BitmapCanvas.fillLines = function(canvas, startY, lineCount, color)
 	local buf = canvas.canvas
 	local lineLength = canvas.length / canvas.height
 	local startOffset = startY * lineLength
@@ -107,12 +106,12 @@ Canvas.fillLines = function(canvas: Canvas, startY: number, lineCount: number, c
 	end
 end
 
-Canvas.fillScreen = function(canvas: Canvas, color: RGBA): ()
-	Canvas.fillLines(canvas, 0, canvas.height, color)
+BitmapCanvas.fillScreen = function(canvas, color)
+	BitmapCanvas.fillLines(canvas, 0, canvas.height, color)
 end
 
 --- Moves the canvas **DOWN**, adding lines on the top
-Canvas.shiftDown = function(canvas: Canvas, lines: number, topMargin: number, bottomMargin: number, color: RGBA): ()
+BitmapCanvas.shiftDown = function(canvas, lines, topMargin, bottomMargin, color)
 	local availableLines = canvas.height - topMargin - bottomMargin
 
 	if availableLines < 1 then
@@ -129,11 +128,11 @@ Canvas.shiftDown = function(canvas: Canvas, lines: number, topMargin: number, bo
 	local buf = canvas.canvas
 	buffer.copy(buf, lineOffset, buf, startOffset, endOffset - lineOffset)
 
-	Canvas.fillLines(canvas, topMargin, clampedLines, color)
+	BitmapCanvas.fillLines(canvas, topMargin, clampedLines, color)
 end
 
 --- Moves the canvas **UP**, adding lines on the bottom
-Canvas.shiftUp = function(canvas: Canvas, lines: number, topMargin: number, bottomMargin: number, color: RGBA): ()
+BitmapCanvas.shiftUp = function(canvas, lines, topMargin, bottomMargin, color)
 	local availableLines = canvas.height - topMargin - bottomMargin
 	
 	if availableLines < 1 then
@@ -150,10 +149,10 @@ Canvas.shiftUp = function(canvas: Canvas, lines: number, topMargin: number, bott
 	local buf = canvas.canvas
 	buffer.copy(buf, startOffset, buf, lineOffset, endOffset - lineOffset)
 
-	Canvas.fillLines(canvas, canvas.height - bottomMargin - clampedLines, clampedLines, color)
+	BitmapCanvas.fillLines(canvas, canvas.height - bottomMargin - clampedLines, clampedLines, color)
 end
 
-Canvas.shiftRight = function(canvas: Canvas, y: number, startX: number, endX: number, emptyCellCount: number, bgColor: RGBA): ()
+BitmapCanvas.shiftRight = function(canvas, y, startX, endX, emptyCellCount, bgColor)
 	local width = endX - startX
 	local cellsToCopy = width - emptyCellCount
 
@@ -174,12 +173,12 @@ Canvas.shiftRight = function(canvas: Canvas, y: number, startX: number, endX: nu
 		end
 	end
 
-	for x = 0, emptyCellCount do
-		Canvas.fillCell(canvas, startX + x, y, bgColor)
+	for x = 0, emptyCellCount - 1 do
+		BitmapCanvas.fillCell(canvas, startX + x, y, bgColor)
 	end
 end
 
-Canvas.shiftLeft = function(canvas: Canvas, y: number, startX: number, endX: number, emptyCellCount: number, bgColor: RGBA): ()
+BitmapCanvas.shiftLeft = function(canvas, y, startX, endX, emptyCellCount, bgColor)
 	local width = endX - startX
 	local cellsToCopy = width - emptyCellCount
 
@@ -200,23 +199,23 @@ Canvas.shiftLeft = function(canvas: Canvas, y: number, startX: number, endX: num
 		end
 	end
 
-	for x = 0, emptyCellCount do
-		Canvas.fillCell(canvas, endX - x, y, bgColor)
+	for x = 0, emptyCellCount - 1 do
+		BitmapCanvas.fillCell(canvas, endX - x, y, bgColor)
 	end
 end
 
-Canvas.createCanvas = function(w: number, h: number, cellSize: number?): Canvas
+BitmapCanvas.createCanvas = function(w, h, cellSize)
 	local cs = cellSize or 8
 	local len = w * h * cs * cs * 2 * 4
-	local canvas: Canvas = {
+	local canvas: Types.Canvas<BitmapCanvas> = {
 		canvas = buffer.create(len),
 		length = len,
 		width = w,
 		height = h,
 		cellSize = cs,
 	}
-	Canvas.fillScreen(canvas, 0x000000ff)
+
 	return canvas
 end
 
-return table.freeze(Canvas)
+return table.freeze(BitmapCanvas)

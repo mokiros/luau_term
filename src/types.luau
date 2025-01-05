@@ -1,4 +1,4 @@
-local canvas = require("./canvas")
+local Canvas = require("./canvas")
 local Charsets = require("./charsets")
 
 export type Cursor = vector
@@ -23,13 +23,14 @@ export type Parser = {
 }
 
 export type TerminalScreen = {
-	canvas: canvas.Canvas,
+	canvas: Canvas.Canvas<any>,
 	cursor: Cursor,
 	savedCursor: Cursor,
 	tabs: { number },
 }
 
 export type Terminal = {
+	canvasType: Canvas.CanvasType,
 	currentScreen: TerminalScreen,
 	screens: {
 		normal: TerminalScreen,
@@ -41,6 +42,7 @@ export type Terminal = {
 	charset: Charsets.Charset,
 	attributes: {
 		bold: boolean,
+		italic: boolean,
 		underline: boolean,
 		inverted: boolean,
 	},
@@ -64,10 +66,10 @@ export type Terminal = {
 		sendFocus: boolean,
 		wraparound: boolean,
 	},
-	theme: { canvas.RGBA },
-	fgColor: canvas.RGBA,
+	theme: { Canvas.RGBA },
+	fgColor: Canvas.RGBA,
 	fgIndex: number,
-	bgColor: canvas.RGBA,
+	bgColor: Canvas.RGBA,
 	bgIndex: number,
 
 	-- externally supplied functions

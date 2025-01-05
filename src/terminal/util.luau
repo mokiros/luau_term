@@ -1,5 +1,5 @@
 local Types = require("../types")
-local canvas = require("../canvas")
+local Canvas = require("../canvas")
 local Constants = require("../constants")
 
 local vector = require("../vector")
@@ -16,12 +16,12 @@ end
 
 Util.scrollUp = function(term: Types.Terminal, amount: number)
 	local screen = term.currentScreen
-	canvas.shiftUp(screen.canvas, amount, term.topMargin, term.bottomMargin, Util.bgColor(term))
+	Canvas[term.canvasType].shiftUp(screen.canvas, amount, term.topMargin, term.bottomMargin, Util.bgColor(term))
 end
 
 Util.scrollDown = function(term: Types.Terminal, amount: number)
 	local screen = term.currentScreen
-	canvas.shiftDown(screen.canvas, amount, term.topMargin, term.bottomMargin, Util.bgColor(term))
+	Canvas[term.canvasType].shiftDown(screen.canvas, amount, term.topMargin, term.bottomMargin, Util.bgColor(term))
 end
 
 Util.unsetWrapState = function(term: Types.Terminal)
@@ -34,7 +34,7 @@ end
 Util.shiftRight = function(term: Types.Terminal, amount: number)
 	local screen = term.currentScreen
 	Util.unsetWrapState(term)
-	canvas.shiftRight(screen.canvas, screen.cursor.y, screen.cursor.x, screen.canvas.width - 1, amount, Util.bgColor(term))
+	Canvas[term.canvasType].shiftRight(screen.canvas, screen.cursor.y, screen.cursor.x, screen.canvas.width - 1, amount, Util.bgColor(term))
 end
 
 Util.setCursorPosition = function(term: Types.Terminal, x: number | nil, y: number | nil)
@@ -162,7 +162,7 @@ Util.switchToAltScreen = function(term: Types.Terminal)
 	if term.currentScreen == term.screens.alternate then
 		return
 	end
-	canvas.fillScreen(term.screens.alternate.canvas, term.bgColor)
+	Canvas[term.canvasType].fillScreen(term.screens.alternate.canvas, term.bgColor)
 	term.screens.alternate.cursor = term.screens.normal.cursor
 	term.currentScreen = term.screens.alternate
 end
@@ -171,7 +171,7 @@ Util.switchToNormalScreen = function(term: Types.Terminal)
 	if term.currentScreen == term.screens.normal then
 		return
 	end
-	canvas.fillScreen(term.screens.alternate.canvas, term.bgColor)
+	Canvas[term.canvasType].fillScreen(term.screens.alternate.canvas, term.bgColor)
 	term.screens.normal.cursor = term.screens.alternate.cursor
 	term.currentScreen = term.screens.normal
 end

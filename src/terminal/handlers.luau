@@ -1,4 +1,4 @@
-local canvas = require("../canvas")
+local Canvas = require("../canvas")
 local Constants = require("../constants")
 local Types = require("../types")
 local Util = require("./util")
@@ -25,9 +25,6 @@ local function fiEsc(params)
 	return fi(params, { 0x30, 0x7e })
 end
 
-local underlineGlyph = buffer.create(16)
-buffer.writeu8(underlineGlyph, 12, 0xFF)
-
 Handlers.print = function(term, code)
 	local shouldPrint, codepoint = Unicode.process(code, term.parser.joinState)
 	if not shouldPrint then
@@ -51,9 +48,16 @@ Handlers.print = function(term, code)
 	if charset and charset[codepoint] then
 		codepoint = charset[codepoint]
 	end
-	local bitmapGlyph = term.font[codepoint] or term.font[0xFFFD] or error(`Unknown codepoint: {codepoint}`)
 	local screen = term.currentScreen
-	local charWidth = buffer.len(bitmapGlyph) / (screen.canvas.cellSize * 2)
+	local bitmapGlyph, charWidth
+	if term.canvasType == Canvas.CanvasType.TextLabel then
+		bitmapGlyph = utf8.char(codepoint)
+		charWidth = 1
+	else
+		local glyph = term.font[codepoint] or term.font[0xFFFD] or error(`Unknown codepoint: {codepoint}`)
+		charWidth = buffer.len(glyph) / (screen.canvas.cellSize * 2)
+		bitmapGlyph = glyph
+	end
 	if screen.cursor.x + charWidth > screen.canvas.width then
 		if term.decPrivateModes.wraparound then
 			local nextY = screen.cursor.y + 1
@@ -72,10 +76,7 @@ Handlers.print = function(term, code)
 	if term.modes.insert then
 		Util.shiftRight(term, charWidth)
 	end
-	canvas.drawBitmap(screen.canvas, cursor.x, cursor.y, bitmapGlyph, fgColor, bgColor)
-	if term.attributes.underline then
-		canvas.drawBitmap(screen.canvas, cursor.x, cursor.y, underlineGlyph, fgColor)
-	end
+	Canvas[term.canvasType].draw(screen.canvas, cursor.x, cursor.y, bitmapGlyph, term.attributes, fgColor, bgColor)
 	screen.cursor += vector(charWidth, 0, 0)
 	term.lastPrintedCodepoint = codepoint
 end
@@ -186,22 +187,22 @@ Handlers.csi[fi({ final = "J" })] = function(term, params)
 
 	if mode == 0 then
 		for x = screen.cursor.x, screen.canvas.width - 1 do
-			canvas.fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
+			Canvas[term.canvasType].fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
 		end
 		local lines = screen.canvas.height - screen.cursor.y - 1
 		if lines > 0 then
-			canvas.fillLines(screen.canvas, screen.cursor.y + 1, lines, Util.bgColor(term))
+			Canvas[term.canvasType].fillLines(screen.canvas, screen.cursor.y + 1, lines, Util.bgColor(term))
 		end
 	elseif mode == 1 then
 		local lines = screen.cursor.y - 1
 		if lines > 0 then
-			canvas.fillLines(screen.canvas, 0, lines, Util.bgColor(term))
+			Canvas[term.canvasType].fillLines(screen.canvas, 0, lines, Util.bgColor(term))
 		end
 		for x = 0, screen.cursor.x do
-			canvas.fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
+			Canvas[term.canvasType].fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
 		end
 	elseif mode == 2 or mode == 3 then
-		canvas.fillScreen(screen.canvas, Util.bgColor(term))
+		Canvas[term.canvasType].fillScreen(screen.canvas, Util.bgColor(term))
 	end
 end
 
@@ -217,14 +218,14 @@ Handlers.csi[fi({ final = "K" })] = function(term, params)
 
 	if mode == 0 then
 		for x = screen.cursor.x, screen.canvas.width - 1 do
-			canvas.fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
+			Canvas[term.canvasType].fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
 		end
 	elseif mode == 1 then
 		for x = 0, screen.cursor.x do
-			canvas.fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
+			Canvas[term.canvasType].fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
 		end
 	elseif mode == 2 then
-		canvas.fillLines(screen.canvas, screen.cursor.y, 1, Util.bgColor(term))
+		Canvas[term.canvasType].fillLines(screen.canvas, screen.cursor.y, 1, Util.bgColor(term))
 	end
 end
 
@@ -241,7 +242,7 @@ Handlers.csi[fi({ final = "L" })] = function(term, params)
 		return
 	end
 
-	canvas.shiftDown(screen.canvas, amount, screen.cursor.y, term.bottomMargin, Util.bgColor(term))
+	Canvas[term.canvasType].shiftDown(screen.canvas, amount, screen.cursor.y, term.bottomMargin, Util.bgColor(term))
 	Util.setCursorPosition(term, 0, nil)
 end
 
@@ -255,7 +256,7 @@ Handlers.csi[fi({ final = "M" })] = function(term, params)
 		return
 	end
 
-	canvas.shiftUp(screen.canvas, amount, screen.cursor.y, term.bottomMargin, Util.bgColor(term))
+	Canvas[term.canvasType].shiftUp(screen.canvas, amount, screen.cursor.y, term.bottomMargin, Util.bgColor(term))
 	Util.setCursorPosition(term, 0, nil)
 end
 
@@ -264,7 +265,14 @@ Handlers.csi[fi({ final = "P" })] = function(term, params)
 	local screen = term.currentScreen
 	local amount = params.params[1] or 1
 	Util.unsetWrapState(term)
-	canvas.shiftLeft(screen.canvas, screen.cursor.y, screen.cursor.x, screen.canvas.width - 1, amount, Util.bgColor(term))
+	Canvas[term.canvasType].shiftLeft(
+		screen.canvas,
+		screen.cursor.y,
+		screen.cursor.x,
+		screen.canvas.width - 1,
+		amount,
+		Util.bgColor(term)
+	)
 end
 
 -- ESC [ n S - scroll up
@@ -286,7 +294,7 @@ Handlers.csi[fi({ final = "X" })] = function(term, params)
 	local endX = math.min(screen.cursor.x + amount - 1, screen.canvas.width - 1)
 	Util.unsetWrapState(term)
 	for x = screen.cursor.x, endX do
-		canvas.fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
+		Canvas[term.canvasType].fillCell(screen.canvas, x, screen.cursor.y, Util.bgColor(term))
 	end
 end
 
@@ -493,12 +501,16 @@ Handlers.csi[fi({ final = "m" })] = function(term, params)
 			sgr0()
 		elseif param == 1 then
 			term.attributes.bold = true
+		elseif param == 3 then
+			term.attributes.italic = true
 		elseif param == 4 then
 			term.attributes.underline = true
 		elseif param == 7 then
 			term.attributes.inverted = true
 		elseif param == 22 then
 			term.attributes.bold = false
+		elseif param == 23 then
+			term.attributes.italic = false
 		elseif param == 24 then
 			term.attributes.underline = false
 		elseif param == 27 then
