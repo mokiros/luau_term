@@ -1,7 +1,7 @@
 local Terminal = require(script.luau_term)
 local TERMINAL_WIDTH = 80
 local TERMINAL_HEIGHT = 30
-local TERMINAL_CANVAS_TYPE = "Bitmap"
+local TERMINAL_CANVAS_TYPE: "Bitmap" = "Bitmap"
 
 local std = script:WaitForChild("stdio") :: RemoteEvent
 local newSession = script:WaitForChild("NewSession") :: RemoteFunction
