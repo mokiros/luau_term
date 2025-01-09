@@ -8,15 +8,15 @@ local parseUnifont = require("./unifont")
 
 local UNIFONT_ASCII = require("./unifont_ascii")
 
-local function stdout(term: Types.Terminal, buf: buffer, bytesToRead: number?): ()
+export type Terminal = Types.Terminal
+
+local function stdout(term: Terminal, buf: buffer, bytesToRead: number?): ()
 	local n = bytesToRead or buffer.len(buf)
 
 	for i = 0, n - 1 do
 		parser.parse(term, buffer.readu8(buf, i))
 	end
 end
-
-export type Terminal = Types.Terminal
 
 return {
 	stdout = stdout,
