@@ -1,2 +1,3 @@
 [tools]
 rojo = "rojo-rbx/rojo@7.4.4"
+darklua = "seaofvoices/darklua@0.14.1"
