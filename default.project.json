@@ -1,6 +1,6 @@
 {
 	"name": "luau_term",
 	"tree": {
-		"$path": "src"
+		"$path": "out"
 	}
 }
