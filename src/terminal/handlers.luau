@@ -2,7 +2,6 @@ local Canvas = require("../canvas")
 local Constants = require("../constants")
 local Types = require("../types")
 local Util = require("./util")
-local Unicode = require("../unicode")
 
 local vector = require("../vector")
 
@@ -25,14 +24,7 @@ local function fiEsc(params)
 	return fi(params, { 0x30, 0x7e })
 end
 
-Handlers.print = function(term, code)
-	local shouldPrint, codepoint = Unicode.process(code, term.parser.joinState)
-	if not shouldPrint then
-		term.parser.joinState = codepoint
-		return
-	end
-	term.parser.joinState = 0
-
+Handlers.print = function(term, codepoint)
 	local fgColor = term.fgColor
 	local fgIndex = term.fgIndex
 	local bgColor = term.bgColor

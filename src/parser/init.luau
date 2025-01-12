@@ -1,6 +1,7 @@
 local Constants = require("../constants")
 local Types = require("../types")
 local TransitionTable = require("./transition_table")
+local Unicode = require('../unicode')
 
 local ParserState = Constants.ParserState
 local ParserAction = Constants.ParserAction
@@ -67,12 +68,33 @@ end
 local function parse(term: Types.Terminal, code: number): ()
 	local parser = term.parser
 	local handlers = term.handlers
+
+	if parser.joinState ~= 0 then
+		local isReady, newState = Unicode.process(code, parser.joinState)
+		if not isReady then
+			parser.joinState = newState or 0
+			return
+		end
+		parser.joinState = 0
+		if newState then
+			handlers.print(term, newState)
+			return
+		else
+			handlers.print(term, Unicode.INVALID_CODEPOINT)
+		end
+	end
+
 	local idx =
 		bit32.bor(bit32.lshift(parser.currentState, TableAccess.INDEX_STATE_SHIFT), math.min(code, Constants.NON_ASCII_PRINTABLE))
 	local transition = buffer.readu8(TransitionTable, idx)
 	local a = bit32.rshift(transition, TableAccess.TRANSITION_ACTION_SHIFT)
 	if a == ParserAction.PRINT then
-		handlers.print(term, code)
+		local isReady, newState = Unicode.process(code, 0)
+		if not isReady then
+			parser.joinState = newState or 0
+			return
+		end
+		handlers.print(term, newState or Unicode.INVALID_CODEPOINT)
 	elseif a == ParserAction.EXECUTE then
 		local handler = handlers.exec[code]
 		if handler then
