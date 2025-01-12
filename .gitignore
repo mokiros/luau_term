@@ -2,6 +2,12 @@
 /*.rbxlx.lock
 /*.rbxl.lock
 
+# Rojo build files
+*.rbxm
+*.rbxmx
+*.rbxl
+*.rbxlx
+
 # old references
 /old
 /asd
