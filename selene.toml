@@ -1,0 +1,5 @@
+std = "selene_defs"
+exclude = ["example/*", "out/*", "src/canvas/textlabel.luau"]
+
+[lints]
+unused_variable = "allow"

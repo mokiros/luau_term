@@ -1,0 +1,19 @@
+base: luau
+name: selene_defs
+
+globals:
+  require:
+    args:
+      - type: string
+  warn:
+    args:
+      - type: "..."
+        required: false
+  vector.create:
+    args:
+      - type: number
+      - type: number
+      - type: number
+  Content.fromObject:
+    args:
+      - type: any
