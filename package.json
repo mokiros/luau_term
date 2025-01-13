@@ -1,0 +1,24 @@
+{
+	"name": "luau_term",
+	"version": "0.5.0",
+	"description": "Terminal emulator for (Roblox) luau, mainly based on xterm.",
+	"license": "MIT",
+	"author": "mokiros <mokiros@mokiros.dev>",
+	"homepage": "https://github.com/mokiros/luau_term#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/mokiros/luau_term.git"
+	},
+	"main": "src/init.luau",
+	"scripts": {
+		"serve": "./scripts/serve.sh"
+	},
+	"keywords": [
+		"luau",
+		"terminal",
+		"terminal-emulator",
+		"xterm",
+		"vt100",
+		"tty"
+	]
+}
