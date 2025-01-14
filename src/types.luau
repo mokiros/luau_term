@@ -39,7 +39,9 @@ export type Terminal = {
 	parser: Parser,
 	handlers: Handlers,
 	font: { buffer },
-	charset: Charsets.Charset,
+	charsetGLevel: number,
+	charsets: { [number]: Charsets.Charset? },
+	charset: Charsets.Charset?,
 	attributes: {
 		bold: boolean,
 		italic: boolean,

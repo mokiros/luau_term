@@ -2,6 +2,7 @@ local Canvas = require("../canvas")
 local Constants = require("../constants")
 local Types = require("../types")
 local Util = require("./util")
+local Charsets = require("../charsets")
 
 local vector = require("../vector")
 
@@ -691,12 +692,70 @@ Handlers.esc[fiEsc({ final = "M" })] = Handlers.exec[C1.RI]
 
 -- ESC c - full reset
 Handlers.esc[fiEsc({ final = "c" })] = function(term)
-	warn("FIXME: Program requested full reset")
+
+-- ESC n - set G2 charset
+Handlers.esc[fiEsc({ final = "n" })] = function(term)
+	local g = 2
+	term.charsetGLevel = g
+	term.charset = term.charsets[g]
 end
 
--- ESC ( B - set charset to default
-Handlers.esc[fiEsc({ intermediates = { "(" }, final = "B" })] = function()
-	-- TODO: implement charset support
+-- ESC o - set G3 charset
+Handlers.esc[fiEsc({ final = "n" })] = function(term)
+	local g = 3
+	term.charsetGLevel = g
+	term.charset = term.charsets[g]
+end
+
+-- ESC | - set G3 charset
+Handlers.esc[fiEsc({ final = "|" })] = Handlers.esc[fiEsc({ final = "o" })]
+
+-- ESC } - set G2 charset
+Handlers.esc[fiEsc({ final = "}" })] = Handlers.esc[fiEsc({ final = "n" })]
+
+-- ESC ~ - set G1 charset
+Handlers.esc[fiEsc({ final = "n" })] = function(term)
+	local g = 1
+	term.charsetGLevel = g
+	term.charset = term.charsets[g]
+end
+
+-- ESC ( rest - Setup G0 charset with 94 characters
+-- ESC ) rest - Setup G1 charset with 94 characters
+-- ESC * rest - Setup G2 charset with 94 characters
+-- ESC + rest - Setup G3 charset with 94 characters
+for g, char in { [0] = "(", ")", "*", "+" } do
+	local startId = bit32.lshift(string.byte(char), 8)
+
+	local function registerCharset(id: number, charset: Charsets.Charset?)
+		local idx = startId + id
+		Handlers.esc[idx] = function(term)
+			term.charsets[g] = charset
+			if term.charsetGLevel == g then
+				term.charset = charset
+			end
+		end
+
+		-- ESC - rest96 - Setup G1 charset with 96 characters
+		-- ESC . rest96 - Setup G2 charset with 96 characters
+		if g == 1 or g == 2 then
+			local startId2 = bit32.lshift(string.byte(g == 2 and "-" or "."), 8)
+			Handlers.esc[startId2 + id] = Handlers.esc[idx]
+		end
+
+		-- ESC / rest96 - Setup G3 charset with 96 characters
+		-- Does not seem to be supported by xterm.js either
+		if g == 3 then
+			local startId2 = bit32.lshift(string.byte("/"), 8)
+			Handlers.esc[startId2 + id] = function(term) end
+		end
+	end
+
+	for id, charset in Charsets do
+		registerCharset(id, charset)
+	end
+
+	registerCharset(string.byte("B"), nil)
 end
 
 table.freeze(Handlers.esc)
