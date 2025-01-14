@@ -2,7 +2,7 @@
 --!native
 --!strict
 
-local Types = require('./types')
+local Types = require("./types")
 
 type BitmapCanvas = buffer
 

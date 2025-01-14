@@ -19,7 +19,7 @@ local function stdout(term: Terminal, buf: buffer, bytesToRead: number?): ()
 end
 
 local function getActiveBuffer(term: Terminal): buffer
-	assert(term.canvasType == 'Bitmap', `Cannot retrieve active buffer: canvas type is {term.canvasType} (Bitmap expected)`)
+	assert(term.canvasType == "Bitmap", `Cannot retrieve active buffer: canvas type is {term.canvasType} (Bitmap expected)`)
 	return term.currentScreen.canvas.canvas
 end
 

@@ -1,7 +1,7 @@
 local Constants = require("../constants")
 local Types = require("../types")
 local TransitionTable = require("./transition_table")
-local Unicode = require('../unicode')
+local Unicode = require("../unicode")
 
 local ParserState = Constants.ParserState
 local ParserAction = Constants.ParserAction
