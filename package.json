@@ -11,7 +11,8 @@
 	},
 	"main": "src/init.luau",
 	"scripts": {
-		"serve": "./scripts/serve.sh"
+		"serve": "./scripts/serve.sh",
+		"build-model": "./scripts/build-rbxm.sh"
 	},
 	"keywords": [
 		"luau",
