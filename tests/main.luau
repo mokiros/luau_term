@@ -26,7 +26,7 @@ local Terminal = require("../src/init.luau")
 local font = Terminal.parseUnifont(fontFile)
 
 local width, height = 10, 4
-local term = Terminal.createTerminal(width, height, font)
+local term = Terminal.createTerminal("Bitmap", width, height, font)
 
 print("Sending stdout...")
 Terminal.stdout(term, buffer.fromstring("test"))
