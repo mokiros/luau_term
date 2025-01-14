@@ -134,12 +134,12 @@ end
 --- Moves the canvas **UP**, adding lines on the bottom
 BitmapCanvas.shiftUp = function(canvas, lines, topMargin, bottomMargin, color)
 	local availableLines = canvas.height - topMargin - bottomMargin
-	
+
 	if availableLines < 1 then
 		warn("Margins exceed canvas height, not shifting")
 		return
 	end
-	
+
 	local clampedLines = math.clamp(lines, 1, availableLines)
 	local lineHeight = canvas.length / canvas.height
 	local startOffset = topMargin * lineHeight
