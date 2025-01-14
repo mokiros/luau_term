@@ -218,4 +218,5 @@ end
 return {
 	createParser = createParser,
 	parse = parse,
+	resetParser = reset,
 }

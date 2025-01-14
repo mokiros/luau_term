@@ -2,6 +2,7 @@ local Canvas = require("../canvas")
 local Constants = require("../constants")
 local Types = require("../types")
 local Util = require("./util")
+local Parser = require("../parser")
 local Charsets = require("../charsets")
 
 local vector = require("../vector")
@@ -462,18 +463,18 @@ Handlers.csi[fi({ prefix = "?", final = "l" })] = function(term, params)
 end
 
 -- ESC [ [n] m - set graphics rendition (SGR)
+local function sgr0(term)
+	term.attributes.bold = false
+	term.attributes.underline = false
+	term.attributes.inverted = false
+	term.fgIndex = 8
+	term.bgIndex = 1
+	term.fgColor = term.theme[term.fgIndex]
+	term.bgColor = term.theme[term.bgIndex]
+end
 Handlers.csi[fi({ final = "m" })] = function(term, params)
-	local function sgr0()
-		term.attributes.bold = false
-		term.attributes.underline = false
-		term.attributes.inverted = false
-		term.fgIndex = 8
-		term.bgIndex = 1
-		term.fgColor = term.theme[term.fgIndex]
-		term.bgColor = term.theme[term.bgIndex]
-	end
 	if params._length == 0 or (params._length == 1 and params.params[1] == 0) then
-		sgr0()
+		sgr0(term)
 	end
 	local i = 1
 	while i <= params._length do
@@ -491,7 +492,7 @@ Handlers.csi[fi({ final = "m" })] = function(term, params)
 			term.bgIndex = (param % 10) + 9
 			term.bgColor = term.theme[term.bgIndex]
 		elseif param == 0 then
-			sgr0()
+			sgr0(term)
 		elseif param == 1 then
 			term.attributes.bold = true
 		elseif param == 3 then
@@ -559,6 +560,22 @@ Handlers.csi[fi({ final = "m" })] = function(term, params)
 		end
 		i += 1
 	end
+end
+
+-- ESC [ ! p - soft reset
+Handlers.csi[fi({ intermediates = { "!" }, final = "n" })] = function(term)
+	term.changeCursorVisibility(term, true)
+	term.topMargin = 0
+	term.bottomMargin = 0
+
+	-- Call SGR 0
+	sgr0(term)
+
+	term.charset = nil
+	term.charsetGLevel = 0
+	table.clear(term.charsets)
+
+	term.decPrivateModes.origin = false
 end
 
 -- ESC [ n r - set top and bottom margins
@@ -690,8 +707,27 @@ Handlers.esc[fiEsc({ final = "H" })] = Handlers.exec[C1.HTS]
 -- ESC M - reverse index
 Handlers.esc[fiEsc({ final = "M" })] = Handlers.exec[C1.RI]
 
+-- ESC = - set keypad application mode
+Handlers.esc[fiEsc({ final = "=" })] = function(term)
+	term.decPrivateModes.applicationKeypad = true
+end
+
+-- ESC > - reset keypad application mode
+Handlers.esc[fiEsc({ final = ">" })] = function(term)
+	term.decPrivateModes.applicationKeypad = false
+end
+
 -- ESC c - full reset
 Handlers.esc[fiEsc({ final = "c" })] = function(term)
+	-- call soft reset
+	Handlers.csi[fi({ intermediates = { "!" }, final = "n" })](term, nil :: any)
+
+	Util.setCursorPosition(term, 0, 0)
+	Canvas[term.canvasType].fillScreen(term.screens.normal.canvas, term.bgColor)
+	Canvas[term.canvasType].fillScreen(term.screens.alternate.canvas, term.bgColor)
+
+	Parser.resetParser(term.parser)
+end
 
 -- ESC n - set G2 charset
 Handlers.esc[fiEsc({ final = "n" })] = function(term)
