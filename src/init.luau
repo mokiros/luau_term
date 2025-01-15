@@ -23,9 +23,15 @@ local function getActiveBuffer(term: Terminal): buffer
 	return term.currentScreen.canvas.canvas
 end
 
+local function getTextLabelContainers(term: Terminal): (Frame, Frame)
+	assert(term.canvasType == "TextLabel", `Cannot retrieve TextLabel containers: canvas type is {term.canvasType} (TextLabel expected)`)
+	return term.screens.normal.canvas.canvas.frame, term.screens.alternate.canvas.canvas.frame
+end
+
 return {
 	stdout = stdout,
 	getActiveBuffer = getActiveBuffer,
+	getTextLabelContainers = getTextLabelContainers,
 	createTerminal = Terminal.createTerminal,
 	parseUnifont = parseUnifont,
 	Constants = Constants,
