@@ -11,8 +11,12 @@
 	},
 	"main": "src/init.luau",
 	"scripts": {
-		"serve": "./scripts/serve.sh",
-		"build-model": "./scripts/build-rbxm.sh"
+		"serve:darklua": "darklua process -w -c ./darklua.json src out",
+		"serve:rojo": "rojo serve ./test.project.json",
+		"serve:proxy": "cd example_proxy && npm start",
+		"serve": "npm run serve:darklua & npm run serve:rojo & npm run serve:proxy",
+		"process": "darklua process -c ./darklua.json src out",
+		"build-model": "npm run process && rojo build --output ./build/luau_term.rbxm ./default.project.json"
 	},
 	"keywords": [
 		"luau",

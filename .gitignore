@@ -22,3 +22,4 @@ unifont-*.hex
 
 # darklua output
 /out
+/build
