@@ -2,6 +2,8 @@
 
 Terminal emulator for (Roblox) luau, mainly based on xterm.
 
+https://github.com/user-attachments/assets/5f3b16a7-2c67-4aee-8dba-ea699ec69885
+
 ## Overview
 
 This is a terminal emulator, it cannot run programs by itself, neither does it have
